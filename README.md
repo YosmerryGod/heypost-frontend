@@ -1,3 +1,5 @@
+![Frontend CI](https://github.com/YosmerryGod/heypost-frontend/actions/workflows/frontend-ci.yml/badge.svg)
+
 # HeyPost Frontend
 
 Repository untuk source frontend aplikasi kasir dan operasional HeyPost.
