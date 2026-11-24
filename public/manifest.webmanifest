@@ -1,0 +1,13 @@
+{
+  "name": "heypost — Kasir Pintar",
+  "short_name": "heypost",
+  "description": "Kasir, stok, dan laporan untuk bisnis yang terus bergerak.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#0064e6",
+  "lang": "id-ID",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

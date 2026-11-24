@@ -1,14 +1,8 @@
-![Frontend CI](https://github.com/YosmerryGod/heypost-frontend/actions/workflows/frontend-ci.yml/badge.svg)
+# heypost Frontend
 
-# HeyPost Frontend
+Frontend aplikasi kasir heypost: katalog produk, keranjang, pembayaran, struk, riwayat transaksi, inventori, dan laporan penjualan. Dibangun dengan React, TypeScript, Vite, Tailwind CSS, dan tRPC.
 
-Repository untuk source frontend aplikasi kasir dan operasional HeyPost.
-
-Frontend terhubung ke backend terpisah melalui endpoint same-origin `/api/trpc`. Tidak ada seed/mock data bisnis, identitas toko contoh, atau QRIS palsu.
-
-## Source
-
-Unduh arsip frontend dari lampiran percakapan, lalu ekstrak seluruh isinya ke root repository ini.
+Repository ini hanya berisi frontend. Backend harus dijalankan terpisah dan menyediakan endpoint tRPC yang sesuai dengan kontrak di `src/contracts/appRouter.ts`.
 
 ## Menjalankan lokal
 
@@ -18,11 +12,23 @@ cp .env.example .env
 npm run dev
 ```
 
-Atur `VITE_API_PROXY_TARGET` di `.env` jika backend lokal tidak berjalan pada origin yang sama.
+Frontend berjalan pada `http://localhost:5173`. Request `/api` diteruskan ke origin pada `VITE_API_PROXY_TARGET` (default `http://localhost:3000`).
 
-## Build
+## Pemeriksaan
 
 ```bash
+npm run check
 npm run lint
 npm run build
 ```
+
+## Struktur
+
+- `src/pages` — Kasir, Transaksi, Produk, dan Laporan.
+- `src/components` — shell aplikasi, state, dan dialog.
+- `src/contracts` — kontrak tipe API; bukan implementasi backend.
+- `src/providers` — koneksi tRPC dan React Query.
+- `public` — manifest, service worker, dan ikon PWA.
+- `DESIGN.md` — kontrak visual dan aturan komponen.
+
+Tampilan mendukung desktop dan mobile, navigasi keyboard, target sentuh minimal 44 px, serta safe-area. QRIS pada alur pembayaran adalah simulasi dan tidak terhubung ke penyedia pembayaran atau rekening bank.
