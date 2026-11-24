@@ -1,0 +1,39 @@
+import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { Archive, Package, Pencil, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { trpc } from "@/providers/trpc";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ErrorState, Loading } from "@/components/Loading";
+import { rupiah } from "@/lib/format";
+
+type ProductForm = { id?: number; name: string; categoryId: number; price: number; stock: number; imageUrl: string };
+const emptyForm: ProductForm = { name: "", categoryId: 0, price: 0, stock: 0, imageUrl: "" };
+
+export default function ProductsPage() {
+  const { data, isLoading, error, refetch } = trpc.pos.bootstrap.useQuery();
+  const utils = trpc.useUtils();
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState(0);
+  const [form, setForm] = useState<ProductForm | null>(null);
+  const create = trpc.pos.createProduct.useMutation({ onSuccess: () => { toast.success("Produk berhasil ditambahkan"); closeAndRefresh(); } });
+  const update = trpc.pos.updateProduct.useMutation({ onSuccess: () => { toast.success("Perubahan produk disimpan"); closeAndRefresh(); } });
+  const archive = trpc.pos.archiveProduct.useMutation({ onSuccess: () => { toast.success("Produk diarsipkan"); closeAndRefresh(); } });
+  function closeAndRefresh() { setForm(null); utils.pos.bootstrap.invalidate(); }
+  const products = useMemo(() => data?.products ?? [], [data]);
+  const filtered = useMemo(() => products.filter((product) => (category === 0 || product.categoryId === category) && `${product.name} ${product.sku}`.toLowerCase().includes(search.toLowerCase())), [products, category, search]);
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!form || !form.categoryId) { toast.error("Pilih kategori produk"); return; }
+    if (form.id) update.mutate({ ...form, id: form.id });
+    else create.mutate(form);
+  };
+  const pending = create.isPending || update.isPending;
+  return <div className="page-container">
+    <header className="page-heading"><div><span className="section-kicker">INVENTORI</span><h1>Produk & stok</h1><p>Kelola menu, harga, dan ketersediaan dalam satu tempat.</p></div><button className="button primary" onClick={() => setForm({ ...emptyForm, categoryId: data?.categories[0]?.id ?? 0 })}><Plus size={18} /> Tambah produk</button></header>
+    <div className="inventory-strip"><Package size={21} /><div><strong>{products.length} produk aktif</strong><span>{products.filter((product) => product.stock <= 8).length} produk perlu perhatian stok</span></div><div className="inventory-total"><span>Total unit</span><strong>{products.reduce((sum, product) => sum + product.stock, 0)}</strong></div></div>
+    <div className="list-toolbar"><label className="search-field"><Search size={19} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama atau SKU…" aria-label="Cari produk" /></label><select value={category} onChange={(event) => setCategory(Number(event.target.value))} aria-label="Filter kategori"><option value={0}>Semua kategori</option>{data?.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+    {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : <div className="inventory-list"><div className="inventory-head"><span>Produk</span><span>Kategori</span><span>Stok</span><span>Harga</span><span>Aksi</span></div>{filtered.map((product) => <div className="inventory-row" key={product.id}><div className="inventory-product"><img src={product.imageUrl} alt="" /><div><strong>{product.name}</strong><span>{product.sku}</span></div></div><span>{data?.categories.find((item) => item.id === product.categoryId)?.name}</span><span className={product.stock <= 8 ? "low-stock" : "stock-good"}><i />{product.stock} unit</span><strong>{rupiah(product.price)}</strong><div className="row-actions"><button className="icon-button" onClick={() => setForm({ id: product.id, name: product.name, categoryId: product.categoryId, price: product.price, stock: product.stock, imageUrl: product.imageUrl })} aria-label={`Edit ${product.name}`}><Pencil size={17} /></button><button className="icon-button danger" disabled={archive.isPending} onClick={() => { if (window.confirm(`Arsipkan ${product.name}? Produk tidak akan tampil di kasir.`)) archive.mutate({ id: product.id }); }} aria-label={`Arsipkan ${product.name}`}><Archive size={17} /></button></div></div>)}{filtered.length === 0 && <div className="inline-empty">Tidak ada produk yang cocok dengan pencarian atau filter ini.</div>}</div>}
+    <Dialog open={!!form} onOpenChange={(open) => { if (!open && !pending) setForm(null); }}><DialogContent className="product-dialog">{form && <form onSubmit={submit}><DialogTitle>{form.id ? "Edit produk" : "Tambah produk"}</DialogTitle><DialogDescription>Lengkapi informasi yang tampil di katalog kasir.</DialogDescription><div className="form-grid"><label className="full">Nama produk<input required minLength={2} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Contoh: Kopi Susu Hey" /></label><label>Kategori<select required value={form.categoryId} onChange={(event) => setForm({ ...form, categoryId: Number(event.target.value) })}><option value={0} disabled>Pilih kategori</option>{data?.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Stok (unit)<input required type="number" min="0" value={form.stock} onChange={(event) => setForm({ ...form, stock: Number(event.target.value) })} /></label><label className="full">Harga jual (Rp)<input required type="number" min="100" step="100" value={form.price || ""} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} placeholder="25000" /></label><label className="full">URL foto produk<input required type="url" value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="https://images.unsplash.com/…" /><small>Gunakan foto milik sendiri atau foto berlisensi bebas.</small></label></div><div className="dialog-actions"><button type="button" className="button secondary" onClick={() => setForm(null)}>Batal</button><button type="submit" className="button primary" disabled={pending}>{pending ? "Menyimpan…" : "Simpan produk"}</button></div></form>}</DialogContent></Dialog>
+  </div>;
+}
