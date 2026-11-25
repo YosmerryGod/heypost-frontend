@@ -413,3 +413,160 @@
 @media (min-width: 480px) {
   .cashier-product-copy p span:last-child { display: inline; }
 }
+
+
+/* [ADDED] Compact category-first menu layout for the cashier catalog. */
+.cashier-catalog {
+  padding-top: 16px;
+}
+.cashier-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 8px;
+}
+.cashier-menu-group {
+  min-width: 0;
+}
+.cashier-menu-group > h2 {
+  margin: 0 0 8px;
+  color: var(--cashier-text);
+  font-family: "Archivo Variable", sans-serif;
+  font-size: 17px;
+  font-weight: 740;
+  line-height: 1.25;
+  letter-spacing: -.025em;
+}
+.cashier-menu-items {
+  display: flex;
+  flex-direction: column;
+}
+.cashier-menu-item {
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cashier-border);
+}
+.cashier-menu-image {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 9px;
+  object-fit: cover;
+}
+.cashier-menu-image.cashier-image-fallback {
+  display: grid;
+  place-items: center;
+}
+.cashier-menu-image.cashier-image-fallback > span {
+  font-size: 23px;
+}
+.cashier-menu-copy {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+.cashier-menu-copy h3 {
+  overflow: hidden;
+  color: var(--cashier-text);
+  font-size: 14px;
+  font-weight: 680;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+}
+.cashier-menu-copy > strong {
+  color: var(--cashier-text);
+  font-family: "Archivo Variable", sans-serif;
+  font-size: 14px;
+  font-weight: 720;
+  letter-spacing: -.015em;
+}
+.cashier-menu-stock {
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 650;
+}
+.cashier-menu-item.sold-out .cashier-menu-image {
+  opacity: .58;
+}
+.cashier-menu-stepper {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+.cashier-menu-stepper button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--cashier-border);
+  border-radius: 9px;
+  background: var(--surface-000);
+  color: var(--cashier-text);
+}
+.cashier-menu-stepper button:hover:not(:disabled) {
+  border-color: var(--cashier-accent);
+  background: var(--cashier-accent-soft);
+  color: var(--cashier-accent);
+}
+.cashier-menu-stepper button:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+}
+.cashier-menu-stepper output {
+  min-width: 20px;
+  color: var(--cashier-text);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 740;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 769px) {
+  .cashier-catalog {
+    padding-top: 24px;
+  }
+  .cashier-category-list {
+    gap: 28px;
+  }
+  .cashier-menu-group > h2 {
+    margin-bottom: 10px;
+    font-size: 19px;
+  }
+  .cashier-menu-item {
+    min-height: 82px;
+    gap: 14px;
+    padding-block: 12px;
+  }
+  .cashier-menu-image {
+    width: 58px;
+    height: 58px;
+  }
+}
+@media (max-width: 380px) {
+  .cashier-menu-item {
+    gap: 9px;
+  }
+  .cashier-menu-image {
+    width: 48px;
+    height: 48px;
+  }
+  .cashier-menu-stepper {
+    gap: 4px;
+  }
+  .cashier-menu-stepper button {
+    width: 36px;
+    height: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cashier-menu-stepper button {
+    transition: none;
+  }
+}
