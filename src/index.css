@@ -818,7 +818,7 @@ body { color: var(--ink-900); }
   .admin-workspace-bar { justify-content: space-between; gap: 5px; }
   .admin-workspace-bar .mobile-header-actions { gap: 0; }
   .admin-workspace-bar .mobile-header-actions > .icon-button { width: 40px; height: 42px; }
-  .mobile-admin-add { border-radius: 9px; background: var(--blue-600); color: white; }
-  .mobile-admin-add:hover { background: var(--blue-700); color: white; }
+  .mobile-admin-add { border-radius: 9px; background: #08764d; color: white; }
+  .mobile-admin-add:hover { background: #066341; color: white; }
   .admin-bottom-nav-hidden { display: none !important; }
 }
