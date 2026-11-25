@@ -45,22 +45,48 @@ export default function ProductsPage() {
     else create.mutate(form);
   };
   const pending = create.isPending || update.isPending || uploadImage.isPending;
-  const selectProductImage = (file?: File) => {
+  // [MODIFIED] Normalize images to JPEG so Android gallery MIME metadata cannot mismatch the actual file format.
+  const selectProductImage = async (file?: File) => {
     if (!file || !form) return;
     if (!file.type.startsWith("image/")) { toast.error("Pilih file gambar."); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error("Ukuran foto maksimal 5 MB."); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      uploadImage.mutate({ dataUrl: String(reader.result ?? "") }, {
-        onSuccess: (result) => {
-          setForm((current) => current ? { ...current, imageUrl: result.imageUrl } : current);
-          toast.success("Foto berhasil diunggah");
-        },
-        onError: (mutationError) => toast.error(mutationError.message),
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        bitmap.close();
+        throw new Error("Foto tidak bisa diproses di perangkat.");
+      }
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      const normalizedBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Foto tidak bisa dikonversi."));
+        }, "image/jpeg", 0.9);
       });
-    };
-    reader.onerror = () => toast.error("Foto tidak bisa dibaca dari perangkat.");
-    reader.readAsDataURL(file);
+      if (normalizedBlob.size > 5 * 1024 * 1024) {
+        toast.error("Ukuran foto setelah diproses melebihi 5 MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadImage.mutate({ dataUrl: String(reader.result ?? "") }, {
+          onSuccess: (result) => {
+            setForm((current) => current ? { ...current, imageUrl: result.imageUrl } : current);
+            toast.success("Foto berhasil diunggah");
+          },
+          onError: (mutationError) => toast.error(mutationError.message),
+        });
+      };
+      reader.onerror = () => toast.error("Foto tidak bisa dibaca dari perangkat.");
+      reader.readAsDataURL(normalizedBlob);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Foto tidak bisa diproses di perangkat.");
+    }
   };
   return <div className="page-container">
     <header className="page-heading"><div><span className="section-kicker">INVENTORI</span><h1>Produk & stok</h1><p>Kelola menu, harga, dan ketersediaan dalam satu tempat.</p></div><div className="page-actions"><button className="button secondary" onClick={() => setCategoryForm("")}><Plus size={18} /> Kategori</button><button className="button primary" disabled={!data?.categories.length} title={!data?.categories.length ? "Buat kategori terlebih dahulu" : undefined} onClick={() => setForm({ ...emptyForm })}><Plus size={18} /> Tambah produk</button></div></header>
