@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Archive, Package, Pencil, Plus, Search } from "lucide-react";
+import { Archive, ImagePlus, Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -8,11 +8,11 @@ import { ErrorState, Loading } from "@/components/Loading";
 import { rupiah } from "@/lib/format";
 
 // [MODIFIED] Keep imageUrl as an empty string when a product has no photo.
-type ProductForm = { id?: number; name: string; categoryId: number; price: number; stock: number; imageUrl: string };
-const emptyForm: ProductForm = { name: "", categoryId: 0, price: 0, stock: 0, imageUrl: "" };
+type ProductForm = { id?: number; name: string; categoryId: number; price: number; stock: number; imageUrl: string | null };
+const emptyForm: ProductForm = { name: "", categoryId: 0, price: 0, stock: 0, imageUrl: null };
 
 // [ADDED] Show the first letter of the product name when no usable photo exists.
-function ProductThumbnail({ src, name }: { src: string; name: string }) {
+function ProductThumbnail({ src, name }: { src: string | null; name: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || failedSrc === src) {
     return <span className="inventory-product-avatar" aria-hidden="true">{name.trim().slice(0, 1).toUpperCase() || "?"}</span>;
