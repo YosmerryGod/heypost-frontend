@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Download, Plus, ReceiptText, Wallet } from "lucide-react";
+import { Ban, Download, Plus, ReceiptText, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ErrorState, Loading } from "@/components/Loading";
+import { useAuth } from "@/hooks/useAuth";
 import { downloadCsv, formatDate, rupiah } from "@/lib/format";
 import { trpc } from "@/providers/trpc";
 import "./ExpensesPage.css";
@@ -11,7 +12,7 @@ const categories = ["Bahan baku", "Operasional", "Transportasi", "Gaji", "Listri
 type PaymentMethod = "Tunai" | "QRIS" | "Kartu";
 type ExpenseRow = {
   id: number; category: string; description: string | null; amount: number;
-  paymentMethod: PaymentMethod; expenseDate: string; createdAt: Date;
+  paymentMethod: PaymentMethod; expenseDate: string; status: "Aktif" | "Dibatalkan"; createdAt: Date;
 };
 
 const today = () => {
@@ -28,11 +29,15 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Tunai");
   const [expenseDate, setExpenseDate] = useState(today);
+  const { data: session } = useAuth();
+  const canCancelExpenses = session?.principal.role === "owner";
   const utils = trpc.useUtils();
   const queryInput = useMemo(() => ({ fromDate, toDate }), [fromDate, toDate]);
   const { data, isLoading, error, refetch } = trpc.expenses.list.useQuery(queryInput, { enabled: fromDate <= toDate });
   const rows = (data ?? []) as ExpenseRow[];
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  const activeRows = rows.filter((row) => row.status === "Aktif");
+  const cancelledRows = rows.filter((row) => row.status === "Dibatalkan");
+  const total = activeRows.reduce((sum, row) => sum + row.amount, 0);
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: async () => {
       await utils.expenses.list.invalidate();
@@ -43,6 +48,13 @@ export default function ExpensesPage() {
       setCategory(categories[0]);
       setPaymentMethod("Tunai");
       setExpenseDate(today());
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
+  const cancelExpense = trpc.expenses.cancel.useMutation({
+    onSuccess: async () => {
+      await utils.expenses.list.invalidate();
+      toast.success("Pengeluaran berhasil dibatalkan");
     },
     onError: (mutationError) => toast.error(mutationError.message),
   });
@@ -69,10 +81,17 @@ export default function ExpensesPage() {
       return;
     }
     downloadCsv("heypost-pengeluaran.csv", [
-      ["Tanggal", "Kategori", "Keterangan", "Metode pembayaran", "Nominal"],
-      ...rows.map((row) => [row.expenseDate, row.category, row.description ?? "", row.paymentMethod, row.amount]),
+      ["Tanggal", "Kategori", "Keterangan", "Metode pembayaran", "Nominal", "Status"],
+      ...rows.map((row) => [row.expenseDate, row.category, row.description ?? "", row.paymentMethod, row.amount, row.status]),
     ]);
     toast.success("Data pengeluaran diekspor");
+  };
+
+  const handleCancel = (row: ExpenseRow) => {
+    if (row.status !== "Aktif") return;
+    if (window.confirm(`Batalkan pengeluaran ${row.category} sebesar ${rupiah(row.amount)}? Riwayat tetap tersimpan dan nominal tidak lagi dihitung sebagai pengeluaran.`)) {
+      cancelExpense.mutate({ id: row.id });
+    }
   };
 
   return <div className="page-container expenses-page">
@@ -86,7 +105,7 @@ export default function ExpensesPage() {
 
     <div className="expense-summary">
       <div className="expense-summary-icon"><Wallet size={21} /></div>
-      <div><span>Total pengeluaran pada periode ini</span><strong>{rupiah(total)}</strong><small>{rows.length} catatan pengeluaran</small></div>
+      <div><span>Total pengeluaran aktif pada periode ini</span><strong>{rupiah(total)}</strong><small>{activeRows.length} aktif · {cancelledRows.length} dibatalkan</small></div>
     </div>
 
     <section className="expense-list-section">
@@ -102,8 +121,8 @@ export default function ExpensesPage() {
         : isLoading ? <Loading label="Memuat pengeluaran..." />
         : error ? <ErrorState message={error.message} retry={() => refetch()} />
         : rows.length === 0 ? <div className="state-panel expense-empty"><ReceiptText size={30} /><h2>Belum ada pengeluaran</h2><p>Catat biaya operasional agar arus kas outlet lebih mudah dipantau.</p><button className="button primary" onClick={() => setIsDialogOpen(true)}><Plus size={17} /> Catat pengeluaran</button></div>
-        : <div className="expense-table-wrap"><table className="expense-table"><thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Pembayaran</th><th className="amount-cell">Nominal</th></tr></thead><tbody>
-          {rows.map((row) => <tr key={row.id}><td><strong>{formatDate(new Date(`${row.expenseDate}T00:00:00`), false)}</strong></td><td><span className="expense-category">{row.category}</span></td><td>{row.description || "—"}</td><td>{row.paymentMethod}</td><td className="amount-cell"><strong>{rupiah(row.amount)}</strong></td></tr>)}
+        : <div className="expense-table-wrap"><table className="expense-table"><thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Pembayaran</th><th>Status</th><th className="amount-cell">Nominal</th>{canCancelExpenses && <th className="expense-action-cell">Aksi</th>}</tr></thead><tbody>
+          {rows.map((row) => <tr key={row.id} className={row.status === "Dibatalkan" ? "expense-cancelled-row" : ""}><td><strong>{formatDate(new Date(`${row.expenseDate}T00:00:00`), false)}</strong></td><td><span className="expense-category">{row.category}</span></td><td>{row.description || "—"}</td><td>{row.paymentMethod}</td><td><span className={`expense-status ${row.status === "Dibatalkan" ? "is-cancelled" : "is-active"}`}>{row.status}</span></td><td className="amount-cell"><strong>{rupiah(row.amount)}</strong></td>{canCancelExpenses && <td className="expense-action-cell">{row.status === "Aktif" ? <button className="expense-cancel-button" type="button" title="Batalkan pengeluaran" aria-label={`Batalkan pengeluaran ${row.category}`} disabled={cancelExpense.isPending} onClick={() => handleCancel(row)}><Ban size={16} /></button> : <span className="expense-no-action">—</span>}</td>}</tr>)}
         </tbody></table></div>}
     </section>
 
