@@ -30,7 +30,7 @@ const product = z.object({
   price: z.number(), stock: z.number(), imageUrl: z.string().nullable(), active: z.boolean(), createdAt: z.date(),
 });
 const productInput = z.object({
-  name: z.string(), categoryId: z.number(), price: z.number(), stock: z.number(), imageUrl: z.string(),
+  name: z.string(), categoryId: z.number(), price: z.number(), stock: z.number(), imageUrl: z.string().nullable(),
 });
 const orderType = z.enum(["Makan di tempat", "Bawa pulang", "Pesan antar"]);
 const paymentMethod = z.enum(["Tunai", "QRIS", "Kartu"]);
