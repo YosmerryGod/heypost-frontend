@@ -211,9 +211,9 @@ h1 { font-family: "Archivo Variable", sans-serif; font-size: clamp(1.65rem, 2.4v
 .detail-total strong { color: var(--blue-600); }
 /* Inventory */
 .inventory-strip { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 16px 20px; border-radius: 12px; background: var(--ink-900); color: var(--surface-000); }
-.inventory-strip > svg { color: oklch(0.8 0.12 259.8); }
+.inventory-strip > svg { color: oklch(0.8 0.12 155); }
 .inventory-strip > div:not(.inventory-total) { display: flex; flex-direction: column; }
-.inventory-strip span { color: oklch(0.82 0.015 255); font-size: 12px; }
+.inventory-strip span { color: oklch(0.82 0.015 155); font-size: 12px; }
 .inventory-total { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .inventory-total strong { font-size: 22px; }
 .inventory-list { overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-000); }
