@@ -112,7 +112,7 @@ export default function AppLayout() {
   const { principal, store, outlets, activeOutletId } = session;
   const activeOutlet = outlets.find((outlet) => outlet.id === activeOutletId);
   const hasPermission = (permission: PermissionKey) => principal.role === "owner" || principal.permissions.includes(permission);
-  const items = navigation.filter((item) => item.roles.includes(principal.role) && (!item.permission || hasPermission(item.permission)));
+  const items = navigation.filter((item) => item.roles.includes(principal.role) && (item.to === "/produk" ? hasPermission("menu.create") || hasPermission("menu.edit") || hasPermission("stock.edit") : !item.permission || hasPermission(item.permission)));
   const profileItems = profileNavigation.filter((item) => item.roles.includes(principal.role) && (!item.permission || hasPermission(item.permission)));
   const bottomItems = items.filter((item) => bottomNavigationPaths.has(item.to));
   const outletControl = principal.role === "owner" ? <select aria-label="Pilih outlet aktif" value={activeOutletId} disabled={switchOutlet.isPending} onChange={(event) => switchOutlet.mutate({ outletId: Number(event.target.value) })}>{outlets.filter((outlet) => outlet.active).map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}</select> : <span>{activeOutlet?.name ?? "Outlet aktif"}</span>;
