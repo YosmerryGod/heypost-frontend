@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Download, Plus, ReceiptText, Search, Wallet } from "lucide-react";
+import { ChevronRight, Download, Plus, ReceiptText, Search } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
