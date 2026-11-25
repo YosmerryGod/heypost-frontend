@@ -46,6 +46,8 @@ export default function EmployeesPanel() {
   const [form, setForm] = useState<EmployeeForm | null>(null);
   const [credential, setCredential] = useState<Credential | null>(null);
   const outlets = session?.outlets ?? [];
+  // [MODIFIED] Deklarasikan sebelum useEffect agar tidak diakses sebelum inisialisasi.
+  const openCreate = () => setForm({ name: "", role: "kasir", outletId: session?.activeOutletId ?? outlets[0]?.id ?? 0, pin: "", active: true, permissions: [...defaultPermissions.kasir] });
   const refresh = () => { void utils.employees.list.invalidate(); };
   const create = trpc.employees.create.useMutation({
     onSuccess: (employee, variables) => {
@@ -76,7 +78,6 @@ export default function EmployeesPanel() {
     return () => { window.removeEventListener("heypost:admin-add", add); window.removeEventListener("heypost:admin-filter", filter); };
   }, [session]);
   const filtered = useMemo(() => (data ?? []).filter((employee) => (employee.name + " " + employee.outletName + " " + employee.role).toLowerCase().includes(mobileSearchQuery.toLowerCase()) && (roleFilter === "all" || employee.role === roleFilter) && (statusFilter === "all" || (statusFilter === "active" ? employee.active : !employee.active))), [data, mobileSearchQuery, roleFilter, statusFilter]);
-  const openCreate = () => setForm({ name: "", role: "kasir", outletId: session?.activeOutletId ?? outlets[0]?.id ?? 0, pin: "", active: true, permissions: [...defaultPermissions.kasir] });
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!form || !form.outletId) { toast.error("Pilih outlet untuk karyawan"); return; }
