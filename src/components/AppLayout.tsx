@@ -129,11 +129,11 @@ export default function AppLayout() {
       {isAdminPage ? <div className="mobile-admin-brand"><button className="icon-button mobile-back-trigger" type="button" onClick={() => navigate(-1)} aria-label="Kembali"><ArrowLeft size={20} /></button><NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink></div> : <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>}
       <div className="mobile-header-actions">
         <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
-          {isMobileSearchOpen ? <div className="mobile-search-field"><Search size={18} aria-hidden="true" /><input ref={mobileSearchInputRef} type="search" value={mobileSearchQuery} onChange={(event) => setMobileSearchQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} /></div> : <button className="icon-button mobile-search-trigger" type="button" onClick={() => { if (isAdminPage) document.querySelector<HTMLInputElement>(".admin-page-search input")?.focus(); else setIsMobileSearchOpen(true); }} aria-label="Buka pencarian" aria-expanded={false}><Search size={19} /></button>}
+          {isMobileSearchOpen ? <div className="mobile-search-field"><Search size={18} aria-hidden="true" /><input ref={mobileSearchInputRef} type="search" value={mobileSearchQuery} onChange={(event) => setMobileSearchQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} /></div> : <button className="icon-button mobile-search-trigger" type="button" onClick={() => { setIsMobileSearchOpen(true); }} aria-label="Buka pencarian" aria-expanded={false}><Search size={19} /></button>}
         </div>
         {isAdminPage && <><button className="icon-button mobile-admin-filter" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-filter", { detail: pathname }))} aria-label="Filter"><Filter size={19} /></button><button className="icon-button mobile-admin-add" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-add", { detail: pathname }))} aria-label="Tambah"><Plus size={21} /></button></>}
         {pathname === "/" && <button className="icon-button mobile-cart-trigger" type="button" onClick={() => mobileCartOpenRef.current?.()} aria-label={`Buka detail pesanan, ${mobileCartCount} item`} title="Detail pesanan"><ShoppingBag size={19} />{mobileCartCount > 0 && <span className="mobile-cart-count">{mobileCartCount > 99 ? "99+" : mobileCartCount}</span>}</button>}
-        <div className="mobile-profile-menu" ref={mobileProfileRef}>
+        {!isAdminPage && <div className="mobile-profile-menu" ref={mobileProfileRef}>
           <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil"><UserRound size={19} /></button>
           {isMobileProfileOpen && <div className="mobile-profile-popover">
             <div className="mobile-profile-section-label">AKUN</div>
@@ -154,7 +154,7 @@ export default function AppLayout() {
             </div>}
             <button className="mobile-profile-logout" type="button" onClick={() => logout.mutate()} disabled={logout.isPending}><LogOut size={17} /><span>Keluar</span></button>
           </div>}
-        </div>
+        </div>}
       </div>
       <Dialog open={isStoreNameDialogOpen} onOpenChange={setIsStoreNameDialogOpen}>
         <DialogContent className="settings-dialog">
