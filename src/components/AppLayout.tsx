@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
+import { ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
