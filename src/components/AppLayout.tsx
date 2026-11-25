@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"; // [MODIFIED]
+import { useCallback, useEffect, useRef, useState } from "react"; // [MODIFIED]
 import { useQueryClient } from "@tanstack/react-query";
 import { ChartNoAxesColumnIncreasing, LogOut, Package, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound } from "lucide-react"; // [MODIFIED]
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
@@ -27,6 +27,13 @@ export default function AppLayout() {
   const mobileSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
+  // [ADDED] Cart state is registered by the cashier route and surfaced in the mobile header.
+  const [mobileCartCount, setMobileCartCount] = useState(0);
+  const mobileCartOpenRef = useRef<(() => void) | null>(null);
+  const registerMobileCart = useCallback((count: number, openCart: (() => void) | null) => {
+    setMobileCartCount(count);
+    mobileCartOpenRef.current = openCart;
+  }, []);
   const switchOutlet = trpc.store.switchOutlet.useMutation({
     onSuccess: ({ activeOutletId }, variables) => {
       utils.auth.me.setData(undefined, (current) => current ? { ...current, activeOutletId } : current);
@@ -94,46 +101,52 @@ export default function AppLayout() {
       </nav>
       <div className="sidebar-foot"><UserRound size={18} /><div><strong>{principal.name}</strong><span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span></div><button className="icon-button" onClick={() => logout.mutate()} disabled={logout.isPending} aria-label="Keluar dari akun"><LogOut size={17} /></button></div>
     </aside>
-    {/* [MODIFIED] Mobile header: animated search replaces the wordmark; account and outlet actions live in the profile menu. */}
+    {/* [MODIFIED] Mobile header keeps search, order details, and profile aligned on the right. */}
     <header className="mobile-workspace-bar">
-      <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
-        {isMobileSearchOpen ? (
-          <div className="mobile-search-field">
-            <Search size={18} aria-hidden="true" />
-            <input ref={mobileSearchInputRef} type="search" placeholder="Cari..." aria-label="Cari di HeyPost" />
-          </div>
-        ) : (
-          <>
-            <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
-            <button className="icon-button mobile-search-trigger" type="button" onClick={() => setIsMobileSearchOpen(true)} aria-label="Buka pencarian">
+      <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
+      <div className="mobile-header-actions">
+        <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
+          {isMobileSearchOpen ? (
+            <div className="mobile-search-field">
+              <Search size={18} aria-hidden="true" />
+              <input ref={mobileSearchInputRef} type="search" placeholder="Cari..." aria-label="Cari di HeyPost" />
+            </div>
+          ) : (
+            <button className="icon-button mobile-search-trigger" type="button" onClick={() => setIsMobileSearchOpen(true)} aria-label="Buka pencarian" aria-expanded={false}>
               <Search size={19} />
             </button>
-          </>
+          )}
+        </div>
+        {pathname === "/" && (
+          <button className="icon-button mobile-cart-trigger" type="button" onClick={() => mobileCartOpenRef.current?.()} aria-label={`Buka detail pesanan, ${mobileCartCount} item`} title="Detail pesanan">
+            <ShoppingBag size={19} />
+            {mobileCartCount > 0 && <span className="mobile-cart-count">{mobileCartCount > 99 ? "99+" : mobileCartCount}</span>}
+          </button>
         )}
-      </div>
-      <div className="mobile-profile-menu" ref={mobileProfileRef}>
-        <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil">
-          <UserRound size={19} />
-        </button>
-        {isMobileProfileOpen && (
-          <div className="mobile-profile-popover">
-            <div className="mobile-profile-identity">
-              <strong>{principal.name}</strong>
-              <span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span>
+        <div className="mobile-profile-menu" ref={mobileProfileRef}>
+          <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil">
+            <UserRound size={19} />
+          </button>
+          {isMobileProfileOpen && (
+            <div className="mobile-profile-popover">
+              <div className="mobile-profile-identity">
+                <strong>{principal.name}</strong>
+                <span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span>
+              </div>
+              <div className="mobile-profile-outlet">
+                <strong>{store.name}</strong>
+                {outletControl}
+              </div>
+              <button className="mobile-profile-logout" type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>
+                <LogOut size={17} />
+                <span>Keluar</span>
+              </button>
             </div>
-            <div className="mobile-profile-outlet">
-              <strong>{store.name}</strong>
-              {outletControl}
-            </div>
-            <button className="mobile-profile-logout" type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>
-              <LogOut size={17} />
-              <span>Keluar</span>
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </header>
-    <main className="main-workspace"><div key={activeOutletId}><Outlet /></div></main>
+    <main className="main-workspace"><div key={activeOutletId}><Outlet context={{ registerMobileCart }} /></div></main>
     <nav className="bottom-nav" aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
       {items.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => isActive ? "active" : ""} aria-label={label} title={label}>{({ isActive }) => <><Icon size={21} />{isActive && <span>{label}</span>}</>}</NavLink>)}
     </nav>
