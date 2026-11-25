@@ -50,8 +50,8 @@ export default function OutletsPanel() {
   };
   const pending = create.isPending || update.isPending;
 
-  return <section className="settings-section" aria-labelledby="outlet-list-title">
-    <div className="settings-section-head"><div><h2 id="outlet-list-title">Outlet</h2></div><span>{session.outlets.filter((outlet) => outlet.name.toLowerCase().includes(mobileSearchQuery.toLowerCase()) && (statusFilter === "all" || (statusFilter === "active" ? outlet.active : !outlet.active))).length} outlet</span></div>
+  return <section className="settings-section" >
+    <div className="settings-section-head"><span>{session.outlets.filter((outlet) => outlet.name.toLowerCase().includes(mobileSearchQuery.toLowerCase()) && (statusFilter === "all" || (statusFilter === "active" ? outlet.active : !outlet.active))).length} outlet</span></div>
     <div className="settings-list">
       {session.outlets.filter((outlet) => outlet.name.toLowerCase().includes(mobileSearchQuery.toLowerCase()) && (statusFilter === "all" || (statusFilter === "active" ? outlet.active : !outlet.active))).map((outlet) => <article className="settings-row outlet-row" key={outlet.id}>
         <div className="settings-row-icon"><Building2 size={20} /></div>
