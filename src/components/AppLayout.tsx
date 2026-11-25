@@ -98,7 +98,7 @@ export default function AppLayout() {
       </nav>
       <div className="sidebar-foot"><UserRound size={18} /><div><strong>{principal.name}</strong><span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span></div><button className="icon-button" onClick={() => logout.mutate()} disabled={logout.isPending} aria-label="Keluar dari akun"><LogOut size={17} /></button></div>
     </aside>
-    <header className="mobile-workspace-bar">
+    <header className={`mobile-workspace-bar ${isMobileSearchOpen ? "search-open" : ""}`}>
       <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
       <div className="mobile-header-actions">
         <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
