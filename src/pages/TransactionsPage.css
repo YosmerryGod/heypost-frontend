@@ -63,3 +63,8 @@
   .expense-form-actions { flex-direction: column-reverse; }
   .expense-form-actions .button { width: 100%; }
 }
+
+/* [ADDED] Baris pengeluaran dapat dibuka seperti baris invoice. */
+.daily-ledger-row.expense-row-button { font: inherit; font-family: inherit; cursor: pointer; appearance: none; }
+.daily-ledger-row.expense-row-button:hover { filter: brightness(.985); }
+.daily-ledger-row.expense-row-button:focus-visible { position: relative; z-index: 1; outline: 3px solid color-mix(in oklch, var(--blue-600) 35%, transparent); outline-offset: -3px; }
