@@ -12,7 +12,7 @@ type PermissionKey = "pos.access" | "history.daily.view" | "menu.create" | "menu
 const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: Role[]; permission?: PermissionKey }[] = [
   { to: "/", label: "Kasir", icon: ShoppingBag, roles: ["owner", "manager", "kasir"], permission: "pos.access" },
   { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"], permission: "history.daily.view" },
-  { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"], permission: "menu.create" },
+  { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager", "kasir"], permission: "menu.create" }, // [MODIFIED]
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"], permission: "reports.sales.view" },
   { to: "/outlet", label: "Outlet", icon: Building2, roles: ["owner"] },
   { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
