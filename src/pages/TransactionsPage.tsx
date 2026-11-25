@@ -27,6 +27,8 @@ export default function TransactionsPage() {
   const { data, isLoading, error, refetch } = trpc.pos.transactions.useQuery();
   const { data: session } = useAuth();
   const [selected, setSelected] = useState<TransactionRow | null>(null);
+  // [ADDED] Detail pengeluaran dibuka dengan pola yang sama seperti detail invoice.
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editItems, setEditItems] = useState<{ productId: number; quantity: number }[]>([]);
   const [editDiscount, setEditDiscount] = useState("0");
@@ -53,6 +55,16 @@ export default function TransactionsPage() {
   const canViewExpenses = session?.principal.role === "owner" || session?.principal.permissions.includes("expenses.daily.view") === true;
   const canCreateExpenses = session?.principal.role === "owner" || session?.principal.permissions.includes("expenses.daily.create") === true;
   const { data: expenseData, isLoading: expensesLoading, error: expensesError, refetch: refetchExpenses } = trpc.expenses.list.useQuery({ fromDate: today(), toDate: today() }, { enabled: !!canViewExpenses });
+  // [ADDED] Pembatalan pengeluaran dari detail riwayat hanya untuk owner.
+  const cancelExpense = trpc.expenses.cancel.useMutation({
+    onSuccess: async () => {
+      await utils.expenses.invalidate();
+      await refetchExpenses();
+      setSelectedExpense(null);
+      toast.success("Pengeluaran berhasil dibatalkan");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: async () => {
       await utils.expenses.invalidate();
@@ -146,8 +158,30 @@ export default function TransactionsPage() {
         </div>
       </div>
       <div className="list-toolbar"><span>{ledger.length} aktivitas</span></div>
-      {isLoading || (canViewExpenses && expensesLoading) ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : canViewExpenses && expensesError ? <ErrorState message={expensesError.message} retry={() => refetchExpenses()} /> : ledger.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{mobileSearchQuery.trim() ? "Invoice tidak ditemukan" : "Belum ada aktivitas hari ini"}</h2><p>{mobileSearchQuery.trim() ? "Coba nomor invoice yang lain." : "Penjualan dan pengeluaran hari ini akan muncul di sini."}</p></div> : <div className="daily-ledger">{ledger.map((entry) => entry.kind === "sale" ? <button type="button" className={`daily-ledger-row sale-row ${entry.row.status === "Dibatalkan" ? "cancelled-row" : ""}`} key={entry.id} onClick={() => setSelected(entry.row)}><span className="ledger-kind">{entry.row.status === "Dibatalkan" ? "Dibatalkan" : "Penjualan"}</span><span className="ledger-main"><strong>{entry.row.invoiceNumber}</strong><small>{entry.row.customerName || entry.row.orderType} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>{entry.row.status === "Dibatalkan" ? "Dibatalkan" : `+${rupiah(entry.row.total)}`}</strong><small>{entry.row.items.reduce((sum, item) => sum + item.quantity, 0)} item</small></span><ChevronRight size={18} /></button> : <div className={`daily-ledger-row expense-row ${entry.row.status === "Dibatalkan" ? "cancelled-row" : ""}`} key={entry.id}><span className="ledger-kind">{entry.row.status === "Dibatalkan" ? "Dibatalkan" : "Pengeluaran"}</span><span className="ledger-main"><strong>{entry.row.category}</strong><small>{entry.row.description || entry.row.paymentMethod} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>{entry.row.status === "Dibatalkan" ? "Dibatalkan" : `−${rupiah(entry.row.amount)}`}</strong><small>{entry.row.paymentMethod}</small></span></div>)}</div>}
+      {isLoading || (canViewExpenses && expensesLoading) ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : canViewExpenses && expensesError ? <ErrorState message={expensesError.message} retry={() => refetchExpenses()} /> : ledger.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{mobileSearchQuery.trim() ? "Invoice tidak ditemukan" : "Belum ada aktivitas hari ini"}</h2><p>{mobileSearchQuery.trim() ? "Coba nomor invoice yang lain." : "Penjualan dan pengeluaran hari ini akan muncul di sini."}</p></div> : <div className="daily-ledger">{ledger.map((entry) => entry.kind === "sale" ? <button type="button" className={`daily-ledger-row sale-row ${entry.row.status === "Dibatalkan" ? "cancelled-row" : ""}`} key={entry.id} onClick={() => setSelected(entry.row)}><span className="ledger-kind">{entry.row.status === "Dibatalkan" ? "Dibatalkan" : "Penjualan"}</span><span className="ledger-main"><strong>{entry.row.invoiceNumber}</strong><small>{entry.row.customerName || entry.row.orderType} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>{entry.row.status === "Dibatalkan" ? "Dibatalkan" : `+${rupiah(entry.row.total)}`}</strong><small>{entry.row.items.reduce((sum, item) => sum + item.quantity, 0)} item</small></span><ChevronRight size={18} /></button> : <button type="button" className={`daily-ledger-row expense-row expense-row-button ${entry.row.status === "Dibatalkan" ? "cancelled-row" : ""}`} key={entry.id} onClick={() => setSelectedExpense(entry.row)}><span className="ledger-kind">{entry.row.status === "Dibatalkan" ? "Dibatalkan" : "Pengeluaran"}</span><span className="ledger-main"><strong>{entry.row.category}</strong><small>{entry.row.description || entry.row.paymentMethod} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>{entry.row.status === "Dibatalkan" ? "Dibatalkan" : `−${rupiah(entry.row.amount)}`}</strong><small>{entry.row.paymentMethod}</small></span><ChevronRight size={18} /></button>)}</div>}
     </section>
+
+    {/* [ADDED] Detail pengeluaran dapat dibuka dari baris riwayat harian. */}
+    <Dialog open={!!selectedExpense} onOpenChange={(open) => { if (!open) setSelectedExpense(null); }}>
+      <DialogContent className="detail-dialog">
+        {selectedExpense && <>
+          <DialogTitle>Detail pengeluaran</DialogTitle>
+          <DialogDescription>{formatDate(new Date(`${selectedExpense.expenseDate}T00:00:00`), false)} · {selectedExpense.status}</DialogDescription>
+          <div className="detail-customer">
+            <strong>{selectedExpense.category}</strong>
+            <span>{selectedExpense.description || "Tidak ada keterangan"}</span>
+            <span>{selectedExpense.paymentMethod}</span>
+          </div>
+          <div className="detail-total">
+            <span>Nominal pengeluaran</span>
+            <strong>{rupiah(selectedExpense.amount)}</strong>
+          </div>
+          {selectedExpense.status === "Dibatalkan" && <p className="cancelled-notice">Pengeluaran ini sudah dibatalkan. Riwayat tetap tersimpan.</p>}
+          {session?.principal.role === "owner" && selectedExpense.status === "Aktif" && <button className="button danger full-width" type="button" disabled={cancelExpense.isPending} onClick={() => { if (window.confirm(`Batalkan pengeluaran ${selectedExpense.category} sebesar ${rupiah(selectedExpense.amount)}? Nominal tidak lagi dihitung sebagai pengeluaran.`)) cancelExpense.mutate({ id: selectedExpense.id }); }}><Ban size={16} /> {cancelExpense.isPending ? "Membatalkan..." : "Batalkan pengeluaran"}</button>}
+          <button className="button secondary full-width" type="button" onClick={() => setSelectedExpense(null)}>Tutup</button>
+        </>}
+      </DialogContent>
+    </Dialog>
 
     <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
       <DialogContent className="expense-dialog">
