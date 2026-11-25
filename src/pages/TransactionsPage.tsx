@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Download, Plus, ReceiptText, Search } from "lucide-react";
+import { ChevronRight, Download, Plus, ReceiptText } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,8 +72,8 @@ export default function TransactionsPage() {
   };
 
   return <div className="page-container">
-    <header className="page-heading"><div><span className="section-kicker">OPERASIONAL</span><h1>Riwayat Harian</h1><p>Pantau penjualan harian dan telusuri transaksi yang sudah selesai.</p></div></header>
-    <div className="transaction-stats"><div><span>Hari ini</span><strong>{todayRows.length}</strong><small>transaksi</small></div><div><span>Penjualan hari ini</span><strong>{rupiah(todayRows.reduce((sum, row) => sum + row.total, 0))}</strong><small>total kotor</small></div><div><span>Rata-rata transaksi</span><strong>{rupiah(todayRows.length ? Math.round(todayRows.reduce((sum, row) => sum + row.total, 0) / todayRows.length) : 0)}</strong><small>hari ini</small></div></div>
+    <header className="page-heading transactions-page-heading"><div><h1>Riwayat Harian</h1></div></header>
+    <div className="transaction-stats"><div><span>Transaksi</span><strong>{todayRows.length}</strong></div><div><span>Penjualan hari ini</span><strong>{rupiah(todayRows.reduce((sum, row) => sum + row.total, 0))}</strong></div></div>
 
     <section className="transactions-list-section" aria-labelledby="transactions-list-title">
       <div className="transactions-list-heading">
@@ -83,7 +83,7 @@ export default function TransactionsPage() {
           <button className="button secondary" type="button" onClick={exportData} disabled={!filtered.length}><Download size={18} /> Ekspor CSV</button>
         </div>
       </div>
-      <div className="list-toolbar"><label className="search-field"><Search size={19} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari invoice atau pelanggan…" aria-label="Cari transaksi" /></label><span>{filtered.length} transaksi</span></div>
+      <div className="list-toolbar"><label className="search-field"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari invoice atau pelanggan…" aria-label="Cari transaksi" /></label><span>{filtered.length} transaksi</span></div>
       {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filtered.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>Belum ada transaksi</h2><p>Transaksi yang selesai akan muncul di sini.</p></div> : <div className="transaction-table-wrap"><table className="transaction-table"><thead><tr><th>Invoice</th><th>Pelanggan</th><th>Pembayaran</th><th>Total</th><th><span className="sr-only">Detail</span></th></tr></thead><tbody>{filtered.map((row) => <tr key={row.id} onClick={() => setSelected(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(row); } }}><td><strong>{row.invoiceNumber}</strong><span>{formatDate(row.createdAt)}</span></td><td><strong>{row.customerName}</strong><span>{row.orderType}</span></td><td><span className="payment-badge">{row.paymentMethod}</span></td><td><strong>{rupiah(row.total)}</strong><span>{row.items.reduce((sum, item) => sum + item.quantity, 0)} item</span></td><td><button className="icon-button" onClick={(event) => { event.stopPropagation(); setSelected(row); }} aria-label={`Detail ${row.invoiceNumber}`}><ChevronRight size={19} /></button></td></tr>)}</tbody></table></div>}
     </section>
 
