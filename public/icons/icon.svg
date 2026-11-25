@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="1254" height="1254">
-  <!-- [MODIFIED] HeyPost app icon: black, lime lettering, Rp coin -->
+  <!-- [MODIFIED] HeyPost app icon: emerald lettering on pale mint background -->
   <title>HEY POST Rp</title>
-  <rect width="1254" height="1254" rx="340" ry="340" fill="#000"/>
-  <g fill="none" stroke="#D4FF10" stroke-linecap="round" stroke-linejoin="round">
+  <rect width="1254" height="1254" rx="340" ry="340" fill="#F1F9F4"/>
+  <g fill="none" stroke="#08704B" stroke-linecap="round" stroke-linejoin="round">
     <!-- H -->
     <g stroke-width="110">
       <path d="M268 350V580M457 350V580"/>
@@ -16,13 +16,13 @@
     <!-- S -->
     <path d="M862 738C840 720 800 730 760 730C720 730 720 790 780 810L810 820C870 845 850 925 780 940C730 950 700 930 690 935" stroke-width="100"/>
   </g>
-  <g fill="#D4FF10">
+  <g fill="#08704B">
     <!-- P -->
     <path fill-rule="evenodd" d="M190 680H315C360 680 385 715 385 765C385 830 335 890 260 890H207L190 960Q180 990 150 990H112Q90 990 95 960L155 705Q160 680 190 680Z M235 753H275Q295 753 292 780Q285 815 250 815H222Z"/>
     <!-- O coin -->
-    <circle cx="517" cy="830" r="145"/>
+    <circle cx="517" cy="830" r="145" fill="none" stroke="#08704B" stroke-width="24"/>
     <!-- T -->
     <path d="M960 680H1150Q1175 680 1168 710L1160 745Q1155 760 1135 760H1078L1030 950Q1020 990 985 990H945Q920 990 925 960L985 762H940Q915 762 920 730L930 700Q940 680 960 680Z"/>
   </g>
-  <text x="520" y="880" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-style="italic" font-size="125" fill="#000">Rp</text>
+  <text x="520" y="880" text-anchor="middle" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" font-style="italic" font-size="125" fill="#08704B">Rp</text>
 </svg>
