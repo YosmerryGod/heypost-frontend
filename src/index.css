@@ -649,7 +649,16 @@ body { color: var(--ink-900); }
   .mobile-wordmark span, .mobile-wordmark b { color: var(--blue-600); }
   .mobile-header-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 4px; margin-left: auto; }
   .mobile-header-search { display: flex; align-items: center; flex: 0 0 auto; min-width: 0; }
-  .mobile-header-search.is-open { width: min(40vw, 180px); }
+  .mobile-header-search.is-open { width: auto; flex: 1 1 auto; min-width: 0; }
+  /* [ADDED] Expand header search across the mobile header and temporarily hide the brand/actions. */
+  .mobile-workspace-bar.search-open { justify-content: flex-end; }
+  .mobile-workspace-bar.search-open .mobile-wordmark { display: none; }
+  .mobile-workspace-bar.search-open .mobile-header-actions { width: 100%; flex: 1 1 auto; margin-left: 0; }
+  .mobile-workspace-bar.search-open .mobile-header-search { width: 100%; flex: 1 1 auto; }
+  .mobile-workspace-bar.search-open .mobile-cart-trigger,
+  .mobile-workspace-bar.search-open .mobile-profile-menu { display: none; }
+  .mobile-workspace-bar.search-open .mobile-search-field { min-height: 46px; border-radius: 10px; }
+  .mobile-workspace-bar.search-open .mobile-search-field input { font-size: 15px; }
   .mobile-workspace-bar .icon-button { width: 44px; height: 44px; flex: 0 0 auto; }
   .mobile-search-trigger { display: inline-flex; align-items: center; justify-content: center; }
   .mobile-cart-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; }
