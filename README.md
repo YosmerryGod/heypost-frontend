@@ -47,7 +47,7 @@ npm run build
 
 ## Struktur
 
-- `src/pages` — autentikasi, Kasir, Transaksi, Produk, Laporan, dan Pengaturan.
+- `src/pages` — autentikasi, Kasir, Transaksi, Produk, Laporan, Karyawan, dan Outlet.
 - `src/components` — shell aplikasi, pengelolaan outlet/karyawan, state, dan dialog.
 - `src/hooks` — sesi dan tipe role.
 - `src/contracts` — kontrak tipe API; bukan implementasi backend.
