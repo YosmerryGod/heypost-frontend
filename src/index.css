@@ -641,14 +641,17 @@ body { color: var(--ink-900); }
 }
 
 @media (max-width: 768px) {
-  /* [MODIFIED] Mobile header layout: wordmark/search on the left, profile actions on the right. */
-  .mobile-workspace-bar { position: sticky; top: 0; z-index: 28; min-height: 66px; display: flex; align-items: center; gap: 12px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px 16px; border-bottom: 1px solid var(--line); background: var(--surface-000); }
-  .mobile-header-search { display: flex; align-items: center; flex: 1 1 auto; gap: 12px; min-width: 0; }
-  .mobile-header-search.is-open { min-width: 0; }
+  /* [MODIFIED] Keep the brand left and align search, order details, and profile on the right. */
+  .mobile-workspace-bar { position: sticky; top: 0; z-index: 28; min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px 16px; border-bottom: 1px solid var(--line); background: var(--surface-000); }
   .mobile-wordmark { min-height: 44px; display: inline-flex; align-items: center; flex: 0 0 auto; color: var(--ink-900); text-decoration: none; font-family: "Archivo Variable", sans-serif; font-size: 21px; font-weight: 780; letter-spacing: -.055em; }
   .mobile-wordmark span, .mobile-wordmark b { color: var(--blue-600); }
+  .mobile-header-actions { display: flex; align-items: center; flex: 0 0 auto; gap: 4px; margin-left: auto; }
+  .mobile-header-search { display: flex; align-items: center; flex: 0 0 auto; min-width: 0; }
+  .mobile-header-search.is-open { width: min(40vw, 180px); }
   .mobile-workspace-bar .icon-button { width: 44px; height: 44px; flex: 0 0 auto; }
-  .mobile-search-trigger { margin-left: auto; }
+  .mobile-search-trigger { display: inline-flex; align-items: center; justify-content: center; }
+  .mobile-cart-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+  .mobile-cart-count { position: absolute; top: 1px; right: 1px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 4px; border: 2px solid var(--surface-000); border-radius: 999px; background: var(--blue-600); color: var(--surface-000); font-size: 9px; font-weight: 780; line-height: 1; }
   .mobile-search-field { width: 100%; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-050); color: var(--ink-600); }
   .mobile-search-field:focus-within { border-color: var(--blue-600); box-shadow: 0 0 0 3px color-mix(in oklch, var(--blue-600) 12%, transparent); } /* [ADDED] Visible keyboard and input focus state. */
   .mobile-search-field > svg { flex: 0 0 auto; }
