@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
-import { ChevronRight, Download, Plus, ReceiptText } from "lucide-react";
+import { Ban, ChevronRight, Download, Plus, ReceiptText } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +11,7 @@ import "./TransactionsPage.css";
 
 type TransactionRow = {
   id: number; invoiceNumber: string; customerName: string | null; createdAt: Date; orderType: string;
-  paymentMethod: string; total: number; items: { productName: string; quantity: number; unitPrice: number; subtotal: number }[];
+  paymentMethod: string; status: "Selesai" | "Dibatalkan"; total: number; items: { productName: string; quantity: number; unitPrice: number; subtotal: number }[];
 };
 type PaymentMethod = "Tunai" | "QRIS" | "Kartu";
 type ExpenseRow = { id: number; category: string; description: string | null; amount: number; paymentMethod: string; expenseDate: string; createdAt: Date };
@@ -27,6 +27,19 @@ export default function TransactionsPage() {
   const { data, isLoading, error, refetch } = trpc.pos.transactions.useQuery();
   const { data: session } = useAuth();
   const [selected, setSelected] = useState<TransactionRow | null>(null);
+  const canManageTransactions = session?.principal.role === "owner";
+  const utils = trpc.useUtils();
+  // [ADDED] Pembatalan transaksi hanya tersedia untuk owner.
+  const cancelTransaction = trpc.pos.cancelTransaction.useMutation({
+    onSuccess: async () => {
+      await utils.pos.transactions.invalidate();
+      await utils.pos.summary.invalidate();
+      await utils.pos.bootstrap.invalidate();
+      setSelected(null);
+      toast.success("Transaksi dibatalkan dan stok dikembalikan");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [expenseCategory, setExpenseCategory] = useState(expenseCategories[0]);
   const [expenseDescription, setExpenseDescription] = useState("");
@@ -55,7 +68,7 @@ export default function TransactionsPage() {
   const todayString = new Date().toDateString();
   const todayRows = rows.filter((row) => new Date(row.createdAt).toDateString() === todayString);
   const expenses = useMemo(() => (expenseData ?? []) as ExpenseRow[], [expenseData]);
-  const salesToday = todayRows.reduce((sum, row) => sum + row.total, 0);
+  const salesToday = todayRows.filter((row) => row.status === "Selesai").reduce((sum, row) => sum + row.total, 0);
   const expensesToday = canViewExpenses ? expenses.reduce((sum, row) => sum + row.amount, 0) : 0;
   const remainingToday = salesToday - expensesToday;
   const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
@@ -116,6 +129,6 @@ export default function TransactionsPage() {
       </DialogContent>
     </Dialog>
 
-    <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}><DialogContent className="detail-dialog">{selected && <><DialogTitle>Detail transaksi</DialogTitle><DialogDescription>{selected.invoiceNumber} · {formatDate(selected.createdAt)}</DialogDescription><div className="detail-customer"><span>{selected.customerName}</span><span>{selected.orderType} · {selected.paymentMethod}</span></div><div className="detail-items">{selected.items.map((item, index) => <div key={index}><span><b>{item.quantity}×</b> {item.productName}<small>{rupiah(item.unitPrice)}</small></span><strong>{rupiah(item.subtotal)}</strong></div>)}</div><div className="detail-total"><span>Total dibayar</span><strong>{rupiah(selected.total)}</strong></div><button className="button secondary full-width" onClick={() => window.print()}>Cetak bukti transaksi</button></>}</DialogContent></Dialog>
+    <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}><DialogContent className="detail-dialog">{selected && <><DialogTitle>Detail transaksi</DialogTitle><DialogDescription>{selected.invoiceNumber} · {formatDate(selected.createdAt)}</DialogDescription><div className="detail-customer"><span>{selected.customerName}</span><span>{selected.orderType} · {selected.paymentMethod}</span></div><div className="detail-items">{selected.items.map((item, index) => <div key={index}><span><b>{item.quantity}×</b> {item.productName}<small>{rupiah(item.unitPrice)}</small></span><strong>{rupiah(item.subtotal)}</strong></div>)}</div><div className="detail-total"><span>Total dibayar</span><strong>{rupiah(selected.total)}</strong></div>{canManageTransactions && selected.status === "Selesai" && <button className="button danger full-width" type="button" disabled={cancelTransaction.isPending} onClick={() => { if (window.confirm(`Batalkan transaksi ${selected.invoiceNumber}? Stok akan dikembalikan dan omzet akan disesuaikan.`)) cancelTransaction.mutate({ id: selected.id }); }}><Ban size={16} /> Batalkan transaksi</button>}{selected.status === "Dibatalkan" && <p className="cancelled-notice">Transaksi ini sudah dibatalkan. Riwayat tetap tersimpan.</p>}<button className="button secondary full-width" onClick={() => window.print()}>Cetak bukti transaksi</button></>}</DialogContent></Dialog>
   </div>;
 }
