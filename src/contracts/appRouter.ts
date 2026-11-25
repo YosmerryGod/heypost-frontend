@@ -27,7 +27,7 @@ const authPayload = z.object({
 const category = z.object({ id: z.number(), name: z.string(), sortOrder: z.number() });
 const product = z.object({
   id: z.number(), categoryId: z.number(), name: z.string(), sku: z.string(),
-  price: z.number(), stock: z.number(), imageUrl: z.string(), active: z.boolean(), createdAt: z.date(),
+  price: z.number(), stock: z.number(), imageUrl: z.string().nullable(), active: z.boolean(), createdAt: z.date(),
 });
 const productInput = z.object({
   name: z.string(), categoryId: z.number(), price: z.number(), stock: z.number(), imageUrl: z.string(),
@@ -91,7 +91,7 @@ export const appRouter = t.router({
       products: z.array(product), categories: z.array(category), outlet, role,
     })).query(typeOnly),
     createCategory: procedure.input(z.object({ name: z.string(), sortOrder: z.number().default(0) })).output(category).mutation(typeOnly),
-    createProduct: procedure.input(productInput).output(product).mutation(typeOnly),
+    uploadProductImage: procedure.input(z.object({ dataUrl: z.string() })).output(z.object({ imageUrl: z.string() })).mutation(typeOnly),\n    createProduct: procedure.input(productInput).output(product).mutation(typeOnly),
     updateProduct: procedure.input(productInput.extend({ id: z.number() })).output(product).mutation(typeOnly),
     archiveProduct: procedure.input(z.object({ id: z.number() })).output(z.object({ ok: z.boolean() })).mutation(typeOnly),
     createTransaction: procedure.input(z.object({
