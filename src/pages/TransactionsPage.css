@@ -1,4 +1,11 @@
-.transactions-list-section { margin-top: 28px; }
+.transactions-page-heading { margin-bottom: 22px; }
+.transactions-page-heading h1 { margin: 0; }
+.transaction-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px; }
+.transaction-stats > div { min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 17px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-000); }
+.transaction-stats span { color: var(--ink-600); font-size: 13px; }
+.transaction-stats strong { color: var(--ink-900); font-family: "Archivo Variable", sans-serif; font-size: clamp(20px, 3vw, 26px); font-weight: 740; letter-spacing: -.035em; }
+.transactions-list-section { margin-top: 0; }
+.list-toolbar .search-field { max-width: 100%; }
 .transactions-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
 .transactions-list-heading h2 { font-family: "Archivo Variable", sans-serif; font-size: 20px; font-weight: 720; letter-spacing: -.025em; }
 .transactions-list-actions { display: flex; align-items: center; gap: 9px; }
@@ -13,6 +20,10 @@
 .expense-form-actions { display: flex; justify-content: flex-end; gap: 8px; grid-column: 1 / -1; margin-top: 8px; }
 .expense-form-actions .button { min-height: 46px; }
 @media (max-width: 640px) {
+  .transaction-stats { gap: 9px; margin-bottom: 24px; }
+  .transaction-stats > div { padding: 14px 13px; }
+  .transaction-stats span { font-size: 12px; }
+  .transaction-stats strong { font-size: 19px; }
   .transactions-list-heading { align-items: flex-start; flex-direction: column; }
   .transactions-list-actions { width: 100%; }
   .transactions-list-actions .button { flex: 1; padding-inline: 10px; }
