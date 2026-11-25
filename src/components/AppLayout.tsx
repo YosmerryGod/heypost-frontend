@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Building2, ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
+import { ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -30,12 +30,14 @@ export default function AppLayout() {
   const utils = trpc.useUtils();
   const { data: session } = useAuth();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const [mobileSearchState, setMobileSearchState] = useState({ pathname, query: "" });
+  const mobileSearchQuery = mobileSearchState.pathname === pathname ? mobileSearchState.query : "";
+  const setMobileSearchQuery = (query: string) => setMobileSearchState({ pathname, query });
   const searchPlaceholder = pathname === "/" ? "Cari menu..." : pathname === "/transaksi" ? "Cari invoice..." : "Cari...";
   const closeMobileSearch = useCallback(() => {
     setIsMobileSearchOpen(false);
-    setMobileSearchQuery("");
-  }, []);
+    setMobileSearchState({ pathname, query: "" });
+  }, [pathname]);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [isStoreNameDialogOpen, setIsStoreNameDialogOpen] = useState(false);
   const [storeNameDraft, setStoreNameDraft] = useState("");
@@ -91,10 +93,6 @@ export default function AppLayout() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileSearchOpen, closeMobileSearch]);
-  useEffect(() => {
-    setMobileSearchQuery("");
-    closeMobileSearch();
-  }, [pathname, closeMobileSearch]);
   useEffect(() => {
     if (isMobileSearchOpen) mobileSearchInputRef.current?.focus();
   }, [isMobileSearchOpen]);
