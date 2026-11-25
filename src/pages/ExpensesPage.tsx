@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Download, Plus, ReceiptText, Wallet } from "lucide-react";
+import { Download, Plus, ReceiptText, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ErrorState, Loading } from "@/components/Loading";
