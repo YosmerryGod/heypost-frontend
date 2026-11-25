@@ -62,7 +62,8 @@ function quickCashValues(total: number) {
 function ProductImage({ src, name, className = "" }: { src: string; name: string; className?: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || failedSrc === src) {
-    return <div className={`cashier-image-fallback ${className}`} aria-hidden="true"><PackageOpen size={26} strokeWidth={1.6} /><span>{name.slice(0, 1).toUpperCase()}</span></div>;
+    // [MODIFIED] Use only the product initial when the photo is missing or cannot load.
+    return <div className={`cashier-image-fallback ${className}`} aria-hidden="true"><span>{name.trim().slice(0, 1).toUpperCase() || "?"}</span></div>;
   }
   return <img className={className} src={src} alt="" loading="lazy" onError={() => setFailedSrc(src)} />;
 }
