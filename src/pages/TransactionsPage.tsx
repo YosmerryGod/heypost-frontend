@@ -57,15 +57,12 @@ export default function TransactionsPage() {
   const salesToday = todayRows.reduce((sum, row) => sum + row.total, 0);
   const expensesToday = expenses.reduce((sum, row) => sum + row.amount, 0);
   const remainingToday = salesToday - expensesToday;
-  const filteredRows = useMemo(() => {
-    const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
-    return query ? todayRows.filter((row) => row.invoiceNumber.toLocaleLowerCase("id-ID").includes(query)) : todayRows;
-  }, [todayRows, mobileSearchQuery]);
-  const ledger = useMemo(() => {
-    const sales = filteredRows.map((row) => ({ kind: "sale" as const, id: `sale-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }));
-    const expenseItems = mobileSearchQuery.trim() ? [] : expenses.map((row) => ({ kind: "expense" as const, id: `expense-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }));
-    return [...sales, ...expenseItems].sort((a, b) => b.timestamp - a.timestamp);
-  }, [filteredRows, expenses, mobileSearchQuery]);
+  const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
+  const filteredRows = query ? todayRows.filter((row) => row.invoiceNumber.toLocaleLowerCase("id-ID").includes(query)) : todayRows;
+  const ledger = [
+    ...filteredRows.map((row) => ({ kind: "sale" as const, id: `sale-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row })),
+    ...(query ? [] : expenses.map((row) => ({ kind: "expense" as const, id: `expense-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }))),
+  ].sort((a, b) => b.timestamp - a.timestamp);
   const exportData = () => {
     if (!rows.length) { toast.error("Tidak ada transaksi untuk diekspor"); return; }
     downloadCsv("heypost-transaksi.csv", [["Invoice", "Tanggal", "Pelanggan", "Tipe pesanan", "Pembayaran", "Total"], ...rows.map((row) => [row.invoiceNumber, formatDate(row.createdAt), row.customerName ?? "", row.orderType, row.paymentMethod, row.total])]);
