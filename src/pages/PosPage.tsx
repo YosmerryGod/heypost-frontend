@@ -3,7 +3,6 @@ import { useOutletContext } from "react-router";
 import {
   AlertCircle,
   Banknote,
-  CalendarDays,
   Check,
   ChevronRight,
   CircleCheckBig,
@@ -11,7 +10,6 @@ import {
   Minus,
   PackageOpen,
   Plus,
-  Search,
   ShoppingBag,
   Trash2,
   UserRound,
@@ -73,8 +71,6 @@ export default function PosPage() {
   const { data: session } = useAuth();
   // [ADDED] Report cart quantity and expose the existing cart dialog to the app header.
   const { registerMobileCart } = useOutletContext<{ registerMobileCart: (count: number, openCart: (() => void) | null) => void }>();
-  const [category, setCategory] = useState(0);
-  const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Cart>({});
   const [orderType, setOrderType] = useState<OrderType>("Makan di tempat");
   const [customer, setCustomer] = useState("");
@@ -85,16 +81,19 @@ export default function PosPage() {
   const [clearOpen, setClearOpen] = useState(false);
   const [completed, setCompleted] = useState<Sale | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const products = useMemo(() => (data?.products ?? []) as ProductView[], [data]);
-  const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("id-ID");
-    return products.filter((product) =>
-      (category === 0 || product.categoryId === category)
-      && (!query || `${product.name} ${product.sku}`.toLocaleLowerCase("id-ID").includes(query)),
-    );
-  }, [products, category, search]);
+  // [MODIFIED] Katalog ditampilkan sebagai daftar per kategori, bukan hasil filter.
+  const categoryGroups = useMemo(() => {
+    const categories = data?.categories ?? [];
+    return categories
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        products: products.filter((product) => product.categoryId === item.id),
+      }))
+      .filter((group) => group.products.length > 0);
+  }, [data, products]);
   const lines = useMemo(
     () => products.filter((product) => cart[product.id]).map((product) => ({ ...product, quantity: cart[product.id] })),
     [products, cart],
@@ -109,19 +108,6 @@ export default function PosPage() {
   const appliedDiscount = Math.min(discount, subtotal);
   const total = Math.max(0, subtotal - appliedDiscount);
   const stockConflict = lines.find((line) => line.quantity > line.stock);
-
-  useEffect(() => {
-    const focusSearch = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const isEditing = target?.matches("input, textarea, select, [contenteditable='true']");
-      if (event.key === "/" && !isEditing && !event.ctrlKey && !event.metaKey && !event.altKey && !document.querySelector("[data-slot='dialog-content']")) {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", focusSearch);
-    return () => window.removeEventListener("keydown", focusSearch);
-  }, []);
 
   const add = (product: ProductView) => {
     const quantity = cart[product.id] ?? 0;
@@ -184,66 +170,36 @@ export default function PosPage() {
   return <div className="cashier-page">
     <span className="sr-only" aria-live="polite">{announcement}</span>
     <section className="cashier-catalog" aria-label="Katalog produk">
-      <header className="cashier-heading">
-        <div>
-          <span className="cashier-eyebrow">Kasir / Transaksi baru</span>
-          <h1>Pilih produk</h1>
-          <p><CalendarDays size={15} aria-hidden="true" />{new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
-        </div>
-      </header>
-
-      <div className="cashier-controls">
-        <div className="cashier-search-row">
-          <label className="cashier-search">
-            <Search size={20} aria-hidden="true" />
-            <input
-              ref={searchInputRef}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => { if (event.key === "Escape") { setSearch(""); event.currentTarget.blur(); } }}
-              placeholder="Cari nama produk atau SKU…"
-              aria-label="Cari nama produk atau SKU"
-              autoComplete="off"
-            />
-            {search ? <button type="button" onClick={() => { setSearch(""); searchInputRef.current?.focus(); }} aria-label="Hapus pencarian"><X size={18} /></button> : <kbd>/</kbd>}
-          </label>
-          <span className="cashier-result-count" aria-live="polite">{filtered.length} produk</span>
-        </div>
-        <div className="cashier-categories" role="group" aria-label="Filter kategori produk">
-          <button type="button" aria-pressed={category === 0} className={category === 0 ? "active" : ""} onClick={() => setCategory(0)}>Semua</button>
-          {data?.categories.map((item) => <button type="button" key={item.id} aria-pressed={category === item.id} className={category === item.id ? "active" : ""} onClick={() => setCategory(item.id)}>{item.name}</button>)}
-        </div>
-      </div>
-
-      {isLoading ? <Loading label="Memuat katalog…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filtered.length === 0 ? <div className="state-panel cashier-empty-state">
-        {products.length === 0 ? <PackageOpen size={30} /> : <Search size={30} />}
-        <h2>{products.length === 0 ? "Belum ada produk aktif" : "Produk tidak ditemukan"}</h2>
-        <p>{products.length === 0 ? "Owner atau manager perlu menambahkan produk sebelum transaksi dimulai." : "Periksa ejaan, SKU, atau pilih kategori lain."}</p>
-        {products.length > 0 && <button className="button secondary" type="button" onClick={() => { setSearch(""); setCategory(0); }}>Atur ulang filter</button>}
-      </div> : <div className="cashier-product-grid">
-        {filtered.map((product) => {
-          const quantity = cart[product.id] ?? 0;
-          return <button
-            className={`cashier-product ${quantity ? "in-cart" : ""}`}
-            key={product.id}
-            type="button"
-            onClick={() => add(product)}
-            disabled={product.stock === 0}
-            aria-label={`${product.name}, ${rupiah(product.price)}, stok ${product.stock}. ${quantity ? `${quantity} dalam pesanan` : "Tambah ke pesanan"}`}
-          >
-            <div className="cashier-product-image">
-              <ProductImage src={product.imageUrl} name={product.name} />
-              {product.stock === 0 ? <span className="cashier-stock-flag sold-out">Stok habis</span> : product.stock <= 8 ? <span className="cashier-stock-flag">Sisa {product.stock}</span> : null}
-              {quantity > 0 && <span className="cashier-product-quantity" aria-hidden="true">{quantity}</span>}
-              {product.stock > 0 && <span className="cashier-add-product" aria-hidden="true"><Plus size={19} /></span>}
-            </div>
-            <div className="cashier-product-copy">
-              <h2>{product.name}</h2>
-              <strong>{rupiah(product.price)}</strong>
-              <p><span className={product.stock <= 8 ? "low" : ""}>{product.stock === 0 ? "Tidak tersedia" : `Stok ${product.stock}`}</span><span>{product.sku}</span></p>
-            </div>
-          </button>;
-        })}
+      {isLoading ? <Loading label="Memuat menu…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : products.length === 0 ? <div className="state-panel cashier-empty-state">
+        <PackageOpen size={30} />
+        <h2>Belum ada menu</h2>
+      </div> : <div className="cashier-category-list">
+        {categoryGroups.map((group) => <section className="cashier-menu-group" key={group.id} aria-labelledby={`cashier-category-${group.id}`}>
+          <h2 id={`cashier-category-${group.id}`}>{group.name}</h2>
+          <div className="cashier-menu-items">
+            {group.products.map((product) => {
+              const quantity = cart[product.id] ?? 0;
+              const soldOut = product.stock === 0;
+              return <article className={`cashier-menu-item ${quantity > 0 ? "in-cart" : ""} ${soldOut ? "sold-out" : ""}`} key={product.id}>
+                <ProductImage src={product.imageUrl} name={product.name} className="cashier-menu-image" />
+                <div className="cashier-menu-copy">
+                  <h3>{product.name}</h3>
+                  <strong>{rupiah(product.price)}</strong>
+                  {soldOut && <span className="cashier-menu-stock">Habis</span>}
+                </div>
+                <div className="cashier-menu-stepper" aria-label={`Jumlah ${product.name}`}>
+                  <button type="button" onClick={() => changeQuantity(product.id, -1)} disabled={quantity === 0} aria-label={`Kurangi ${product.name}`}>
+                    <Minus size={17} />
+                  </button>
+                  <output aria-live="polite" aria-label={`${quantity} ${product.name}`}>{quantity}</output>
+                  <button type="button" onClick={() => add(product)} disabled={soldOut || quantity >= Math.min(product.stock, MAX_QUANTITY)} aria-label={`Tambah ${product.name}`}>
+                    <Plus size={17} />
+                  </button>
+                </div>
+              </article>;
+            })}
+          </div>
+        </section>)}
       </div>}
     </section>
 
