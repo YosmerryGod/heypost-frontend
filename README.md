@@ -31,4 +31,4 @@ npm run build
 - `public` — manifest, service worker, dan ikon PWA.
 - `DESIGN.md` — kontrak visual dan aturan komponen.
 
-Tampilan mendukung desktop dan mobile, navigasi keyboard, target sentuh minimal 44 px, serta safe-area. QRIS pada alur pembayaran adalah simulasi dan tidak terhubung ke penyedia pembayaran atau rekening bank.
+Tampilan mendukung desktop dan mobile, navigasi keyboard, target sentuh minimal 44 px, serta safe-area. Pembayaran yang tersedia di frontend saat ini adalah tunai dan kartu; QRIS baru ditampilkan setelah integrasi penyedia pembayaran tersedia.
