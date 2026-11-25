@@ -86,13 +86,17 @@ export default function PosPage() {
   // [MODIFIED] Katalog ditampilkan sebagai daftar per kategori, bukan hasil filter.
   const categoryGroups = useMemo(() => {
     const categories = data?.categories ?? [];
-    return categories
+    const groups = categories
       .map((item) => ({
         id: item.id,
         name: item.name,
         products: products.filter((product) => product.categoryId === item.id),
       }))
       .filter((group) => group.products.length > 0);
+    const groupedProductIds = new Set(groups.flatMap((group) => group.products.map((product) => product.id)));
+    const uncategorized = products.filter((product) => !groupedProductIds.has(product.id));
+    if (uncategorized.length > 0) groups.push({ id: 0, name: "Menu lainnya", products: uncategorized });
+    return groups;
   }, [data, products]);
   const lines = useMemo(
     () => products.filter((product) => cart[product.id]).map((product) => ({ ...product, quantity: cart[product.id] })),
