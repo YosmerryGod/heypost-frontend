@@ -14,6 +14,7 @@ type TransactionRow = {
   paymentMethod: string; total: number; items: { productName: string; quantity: number; unitPrice: number; subtotal: number }[];
 };
 type PaymentMethod = "Tunai" | "QRIS" | "Kartu";
+type ExpenseRow = { id: number; category: string; description: string | null; amount: number; paymentMethod: string; expenseDate: string; createdAt: Date };
 
 const expenseCategories = ["Bahan baku", "Operasional", "Transportasi", "Gaji", "Listrik & air", "Perawatan", "Lainnya"];
 const today = () => {
@@ -32,10 +33,13 @@ export default function TransactionsPage() {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDate, setExpenseDate] = useState(today);
   const [expensePaymentMethod, setExpensePaymentMethod] = useState<PaymentMethod>("Tunai");
+  const isManager = session?.principal.role === "owner" || session?.principal.role === "manager";
+  const { data: expenseData, isLoading: expensesLoading, error: expensesError, refetch: refetchExpenses } = trpc.expenses.list.useQuery({ fromDate: today(), toDate: today() }, { enabled: !!isManager });
   const utils = trpc.useUtils();
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: async () => {
       await utils.expenses.invalidate();
+      await refetchExpenses();
       toast.success("Pengeluaran berhasil disimpan");
       setIsExpenseDialogOpen(false);
       setExpenseCategory(expenseCategories[0]);
@@ -47,13 +51,21 @@ export default function TransactionsPage() {
     onError: (mutationError) => toast.error(mutationError.message),
   });
   const rows = useMemo(() => (data ?? []) as TransactionRow[], [data]);
-  const filteredRows = useMemo(() => {
-    const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
-    return query ? rows.filter((row) => row.invoiceNumber.toLocaleLowerCase("id-ID").includes(query)) : rows;
-  }, [rows, mobileSearchQuery]);
   const todayString = new Date().toDateString();
   const todayRows = rows.filter((row) => new Date(row.createdAt).toDateString() === todayString);
-  const isManager = session?.principal.role === "owner" || session?.principal.role === "manager";
+  const expenses = useMemo(() => (expenseData ?? []) as ExpenseRow[], [expenseData]);
+  const salesToday = todayRows.reduce((sum, row) => sum + row.total, 0);
+  const expensesToday = expenses.reduce((sum, row) => sum + row.amount, 0);
+  const remainingToday = salesToday - expensesToday;
+  const filteredRows = useMemo(() => {
+    const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
+    return query ? todayRows.filter((row) => row.invoiceNumber.toLocaleLowerCase("id-ID").includes(query)) : todayRows;
+  }, [todayRows, mobileSearchQuery]);
+  const ledger = useMemo(() => {
+    const sales = filteredRows.map((row) => ({ kind: "sale" as const, id: `sale-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }));
+    const expenseItems = mobileSearchQuery.trim() ? [] : expenses.map((row) => ({ kind: "expense" as const, id: `expense-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }));
+    return [...sales, ...expenseItems].sort((a, b) => b.timestamp - a.timestamp);
+  }, [filteredRows, expenses, mobileSearchQuery]);
   const exportData = () => {
     if (!rows.length) { toast.error("Tidak ada transaksi untuk diekspor"); return; }
     downloadCsv("heypost-transaksi.csv", [["Invoice", "Tanggal", "Pelanggan", "Tipe pesanan", "Pembayaran", "Total"], ...rows.map((row) => [row.invoiceNumber, formatDate(row.createdAt), row.customerName ?? "", row.orderType, row.paymentMethod, row.total])]);
@@ -77,7 +89,7 @@ export default function TransactionsPage() {
 
   return <div className="page-container">
     <header className="page-heading transactions-page-heading"><div><h1>Riwayat Harian</h1></div></header>
-    <div className="transaction-stats"><div><span>Transaksi</span><strong>{todayRows.length}</strong></div><div><span>Penjualan hari ini</span><strong>{rupiah(todayRows.reduce((sum, row) => sum + row.total, 0))}</strong></div></div>
+    <div className={`transaction-stats ${isManager ? "has-expense-stats" : ""}`}><div><span>Penjualan hari ini</span><strong>{rupiah(salesToday)}</strong></div>{isManager && <><div className="expense-stat"><span>Pengeluaran hari ini</span><strong>{rupiah(expensesToday)}</strong></div><div className={`balance-stat ${remainingToday < 0 ? "negative" : ""}`}><span>Sisa hari ini</span><strong>{rupiah(remainingToday)}</strong></div></>}</div>
 
     <section className="transactions-list-section" aria-labelledby="transactions-list-title">
       <div className="transactions-list-heading">
@@ -87,8 +99,8 @@ export default function TransactionsPage() {
           <button className="button secondary" type="button" onClick={exportData} disabled={!rows.length}><Download size={18} /> Ekspor CSV</button>
         </div>
       </div>
-      <div className="list-toolbar"><span>{filteredRows.length} transaksi</span></div>
-      {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filteredRows.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{rows.length === 0 ? "Belum ada transaksi" : "Invoice tidak ditemukan"}</h2><p>{rows.length === 0 ? "Transaksi yang selesai akan muncul di sini." : "Coba kata kunci invoice yang lain."}</p></div> : <div className="transaction-table-wrap"><table className="transaction-table"><thead><tr><th>Invoice</th><th>Pelanggan</th><th>Pembayaran</th><th>Total</th><th><span className="sr-only">Detail</span></th></tr></thead><tbody>{filteredRows.map((row) => <tr key={row.id} onClick={() => setSelected(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(row); } }}><td><strong>{row.invoiceNumber}</strong><span>{formatDate(row.createdAt)}</span></td><td><strong>{row.customerName}</strong><span>{row.orderType}</span></td><td><span className="payment-badge">{row.paymentMethod}</span></td><td><strong>{rupiah(row.total)}</strong><span>{row.items.reduce((sum, item) => sum + item.quantity, 0)} item</span></td><td><button className="icon-button" onClick={(event) => { event.stopPropagation(); setSelected(row); }} aria-label={`Detail ${row.invoiceNumber}`}><ChevronRight size={19} /></button></td></tr>)}</tbody></table></div>}
+      <div className="list-toolbar"><span>{ledger.length} aktivitas</span></div>
+      {isLoading || (isManager && expensesLoading) ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : expensesError ? <ErrorState message={expensesError.message} retry={() => refetchExpenses()} /> : ledger.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{mobileSearchQuery.trim() ? "Invoice tidak ditemukan" : "Belum ada aktivitas hari ini"}</h2><p>{mobileSearchQuery.trim() ? "Coba nomor invoice yang lain." : "Penjualan dan pengeluaran hari ini akan muncul di sini."}</p></div> : <div className="daily-ledger">{ledger.map((entry) => entry.kind === "sale" ? <button type="button" className="daily-ledger-row sale-row" key={entry.id} onClick={() => setSelected(entry.row)}><span className="ledger-kind">Penjualan</span><span className="ledger-main"><strong>{entry.row.invoiceNumber}</strong><small>{entry.row.customerName || entry.row.orderType} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>+{rupiah(entry.row.total)}</strong><small>{entry.row.items.reduce((sum, item) => sum + item.quantity, 0)} item</small></span><ChevronRight size={18} /></button> : <div className="daily-ledger-row expense-row" key={entry.id}><span className="ledger-kind">Pengeluaran</span><span className="ledger-main"><strong>{entry.row.category}</strong><small>{entry.row.description || entry.row.paymentMethod} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>−{rupiah(entry.row.amount)}</strong><small>{entry.row.paymentMethod}</small></span></div>)}</div>}
     </section>
 
     <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
