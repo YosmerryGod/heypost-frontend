@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Archive, ImagePlus, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { ImagePlus, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOutletContext } from "react-router";
 import { trpc } from "@/providers/trpc";
@@ -79,13 +79,6 @@ export default function ProductsPage() {
       setForm(null);
       await Promise.all([utils.pos.listProducts.invalidate(), utils.pos.bootstrap.invalidate()]);
       toast.success("Perubahan produk disimpan");
-    },
-    onError: (mutationError) => toast.error(mutationError.message),
-  });
-  const archive = trpc.pos.archiveProduct.useMutation({
-    onSuccess: async () => {
-      await Promise.all([utils.pos.listProducts.invalidate(), utils.pos.bootstrap.invalidate()]);
-      toast.success("Produk diarsipkan");
     },
     onError: (mutationError) => toast.error(mutationError.message),
   });
@@ -193,7 +186,7 @@ export default function ProductsPage() {
               <div className="product-management-actions">
                 {canEditMenu && <button type="button" className="product-active-toggle" role="switch" aria-checked={product.active} aria-label={`${product.active ? "Nonaktifkan" : "Aktifkan"} ${product.name}`} disabled={setActive.isPending} onClick={() => setActive.mutate({ id: product.id, active: !product.active })}><span /></button>}
                 {canEditProducts && <button type="button" className="icon-button" aria-label={`Edit ${product.name}`} onClick={() => setForm({ id: product.id, name: product.name, categoryId: product.categoryId, price: product.price, stock: product.stock, imageUrl: product.imageUrl })}><Pencil size={17} /></button>}
-                {canEditMenu && <button type="button" className="icon-button danger" aria-label={`Arsipkan ${product.name}`} disabled={archive.isPending} onClick={() => { if (window.confirm(`Arsipkan ${product.name}? Produk akan dihapus dari daftar menu.`)) archive.mutate({ id: product.id }); }}><Archive size={17} /></button>}
+                {/* [MODIFIED] Tombol arsip dihilangkan dari daftar menu. */}
               </div>
             </article>)}
           </div>
