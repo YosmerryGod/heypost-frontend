@@ -8,17 +8,18 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Role } from "@/hooks/useAuth";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
-const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: Role[] }[] = [
-  { to: "/", label: "Kasir", icon: ShoppingBag, roles: ["owner", "manager", "kasir"] },
-  { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"] },
-  { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
-  { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"] },
+type PermissionKey = "pos.access" | "history.daily.view" | "menu.create" | "menu.edit" | "stock.edit" | "reports.sales.view";
+const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: Role[]; permission?: PermissionKey }[] = [
+  { to: "/", label: "Kasir", icon: ShoppingBag, roles: ["owner", "manager", "kasir"], permission: "pos.access" },
+  { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"], permission: "history.daily.view" },
+  { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"], permission: "menu.create" },
+  { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"], permission: "reports.sales.view" },
   { to: "/outlet", label: "Outlet", icon: Building2, roles: ["owner"] },
   { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
 ];
 
 const bottomNavigationPaths = new Set(["/", "/transaksi"]);
-const profileNavigation: { to: string; label: string; icon: typeof Package; roles: Role[] }[] = [
+const profileNavigation: { to: string; label: string; icon: typeof Package; roles: Role[]; permission?: PermissionKey }[] = [
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
   { to: "/outlet", label: "Outlet", icon: Store, roles: ["owner"] },
   { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
@@ -110,8 +111,9 @@ export default function AppLayout() {
   if (!session) return null;
   const { principal, store, outlets, activeOutletId } = session;
   const activeOutlet = outlets.find((outlet) => outlet.id === activeOutletId);
-  const items = navigation.filter((item) => item.roles.includes(principal.role));
-  const profileItems = profileNavigation.filter((item) => item.roles.includes(principal.role));
+  const hasPermission = (permission: PermissionKey) => principal.role === "owner" || principal.permissions.includes(permission);
+  const items = navigation.filter((item) => item.roles.includes(principal.role) && (!item.permission || hasPermission(item.permission)));
+  const profileItems = profileNavigation.filter((item) => item.roles.includes(principal.role) && (!item.permission || hasPermission(item.permission)));
   const bottomItems = items.filter((item) => bottomNavigationPaths.has(item.to));
   const outletControl = principal.role === "owner" ? <select aria-label="Pilih outlet aktif" value={activeOutletId} disabled={switchOutlet.isPending} onChange={(event) => switchOutlet.mutate({ outletId: Number(event.target.value) })}>{outlets.filter((outlet) => outlet.active).map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}</select> : <span>{activeOutlet?.name ?? "Outlet aktif"}</span>;
 
