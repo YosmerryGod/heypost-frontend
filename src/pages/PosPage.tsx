@@ -25,7 +25,7 @@ import { formatDate, rupiah } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
 import "./PosPage.css";
 
-type ProductView = { id: number; categoryId: number; name: string; price: number; stock: number; imageUrl: string; sku: string };
+type ProductView = { id: number; categoryId: number; name: string; price: number; stock: number; imageUrl: string | null; sku: string };
 type Cart = Record<number, number>;
 type CartLine = ProductView & { quantity: number };
 type OrderType = "Makan di tempat" | "Bawa pulang" | "Pesan antar";
@@ -59,7 +59,7 @@ function quickCashValues(total: number) {
   ])].filter((value) => value >= total).slice(0, 4);
 }
 
-function ProductImage({ src, name, className = "" }: { src: string; name: string; className?: string }) {
+function ProductImage({ src, name, className = "" }: { src: string | null; name: string; className?: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || failedSrc === src) {
     // [MODIFIED] Use only the product initial when the photo is missing or cannot load.
