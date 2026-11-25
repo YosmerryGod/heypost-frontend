@@ -41,6 +41,20 @@ export default function ProductsPage() {
     window.addEventListener("heypost:admin-add", openAddMenu);
     return () => window.removeEventListener("heypost:admin-add", openAddMenu);
   }, []);
+  useEffect(() => {
+    if (!addMenuOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".products-add-popover, .mobile-admin-add, .products-desktop-add")) setAddMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setAddMenuOpen(false); };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [addMenuOpen]);
 
   const createCategory = trpc.pos.createCategory.useMutation({
     onSuccess: async () => {
@@ -153,6 +167,7 @@ export default function ProductsPage() {
         <h1>Menu</h1>
         <p>{products.length} produk · {categories.length} kategori</p>
       </div>
+      {canCreateMenu && <button type="button" className="icon-button products-desktop-add" aria-label="Tambah menu atau kategori" onClick={() => setAddMenuOpen((open) => !open)}><Plus size={20} /></button>}
     </header>
 
     <div className="products-summary">
