@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
-import { Ban, ChevronRight, Download, Plus, ReceiptText } from "lucide-react";
+import { Ban, ChevronRight, Download, Plus, ReceiptText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +11,7 @@ import "./TransactionsPage.css";
 
 type TransactionRow = {
   id: number; invoiceNumber: string; customerName: string | null; createdAt: Date; orderType: string;
-  paymentMethod: string; status: "Selesai" | "Dibatalkan"; total: number; items: { productName: string; quantity: number; unitPrice: number; subtotal: number }[];
+  paymentMethod: string; status: "Selesai" | "Dibatalkan"; subtotal: number; discount: number; total: number; items: { productId: number; productName: string; quantity: number; unitPrice: number; subtotal: number }[];
 };
 type PaymentMethod = "Tunai" | "QRIS" | "Kartu";
 type ExpenseRow = { id: number; category: string; description: string | null; amount: number; paymentMethod: string; expenseDate: string; createdAt: Date };
@@ -27,6 +27,9 @@ export default function TransactionsPage() {
   const { data, isLoading, error, refetch } = trpc.pos.transactions.useQuery();
   const { data: session } = useAuth();
   const [selected, setSelected] = useState<TransactionRow | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editItems, setEditItems] = useState<{ productId: number; quantity: number }[]>([]);
+  const [editDiscount, setEditDiscount] = useState("0");
   const canManageTransactions = session?.principal.role === "owner";
   const utils = trpc.useUtils();
   // [ADDED] Pembatalan transaksi hanya tersedia untuk owner.
@@ -64,6 +67,37 @@ export default function TransactionsPage() {
     },
     onError: (mutationError) => toast.error(mutationError.message),
   });
+  // [ADDED] Edit transaksi hanya untuk owner; stok disesuaikan di backend.
+  const updateTransaction = trpc.pos.updateTransaction.useMutation({
+    onSuccess: async () => {
+      await utils.pos.transactions.invalidate();
+      await utils.pos.summary.invalidate();
+      await utils.pos.bootstrap.invalidate();
+      setIsEditDialogOpen(false);
+      setSelected(null);
+      toast.success("Transaksi berhasil diperbarui");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
+  const openEditDialog = (transaction: TransactionRow) => {
+    setEditItems(transaction.items.map((item) => ({ productId: item.productId, quantity: item.quantity })));
+    setEditDiscount(String(transaction.discount));
+    setIsEditDialogOpen(true);
+  };
+  const saveTransactionEdit = () => {
+    if (!selected || !editItems.length) { toast.error("Transaksi harus memiliki minimal satu item"); return; }
+    const discount = Number(editDiscount);
+    if (!Number.isSafeInteger(discount) || discount < 0) { toast.error("Diskon tidak valid"); return; }
+    updateTransaction.mutate({
+      id: selected.id,
+      customerName: selected.customerName ?? undefined,
+      orderType: selected.orderType as "Makan di tempat" | "Bawa pulang" | "Pesan antar",
+      paymentMethod: selected.paymentMethod as "Tunai" | "QRIS" | "Kartu",
+      discount,
+      cashReceived: selected.cashReceived ?? undefined,
+      items: editItems,
+    });
+  };
   const rows = useMemo(() => (data ?? []) as TransactionRow[], [data]);
   const todayString = new Date().toDateString();
   const todayRows = rows.filter((row) => new Date(row.createdAt).toDateString() === todayString);
@@ -129,6 +163,20 @@ export default function TransactionsPage() {
       </DialogContent>
     </Dialog>
 
-    <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}><DialogContent className="detail-dialog">{selected && <><DialogTitle>Detail transaksi</DialogTitle><DialogDescription>{selected.invoiceNumber} · {formatDate(selected.createdAt)}</DialogDescription><div className="detail-customer"><span>{selected.customerName}</span><span>{selected.orderType} · {selected.paymentMethod}</span></div><div className="detail-items">{selected.items.map((item, index) => <div key={index}><span><b>{item.quantity}×</b> {item.productName}<small>{rupiah(item.unitPrice)}</small></span><strong>{rupiah(item.subtotal)}</strong></div>)}</div><div className="detail-total"><span>Total dibayar</span><strong>{rupiah(selected.total)}</strong></div>{canManageTransactions && selected.status === "Selesai" && <button className="button danger full-width" type="button" disabled={cancelTransaction.isPending} onClick={() => { if (window.confirm(`Batalkan transaksi ${selected.invoiceNumber}? Stok akan dikembalikan dan omzet akan disesuaikan.`)) cancelTransaction.mutate({ id: selected.id }); }}><Ban size={16} /> Batalkan transaksi</button>}{selected.status === "Dibatalkan" && <p className="cancelled-notice">Transaksi ini sudah dibatalkan. Riwayat tetap tersimpan.</p>}<button className="button secondary full-width" onClick={() => window.print()}>Cetak bukti transaksi</button></>}</DialogContent></Dialog>
+    <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}><DialogContent className="detail-dialog">{selected && <><DialogTitle>Detail transaksi</DialogTitle><DialogDescription>{selected.invoiceNumber} · {formatDate(selected.createdAt)}</DialogDescription><div className="detail-customer"><span>{selected.customerName}</span><span>{selected.orderType} · {selected.paymentMethod}</span></div><div className="detail-items">{selected.items.map((item, index) => <div key={index}><span><b>{item.quantity}×</b> {item.productName}<small>{rupiah(item.unitPrice)}</small></span><strong>{rupiah(item.subtotal)}</strong></div>)}</div><div className="detail-total"><span>Total dibayar</span><strong>{rupiah(selected.total)}</strong></div>{canManageTransactions && selected.status === "Selesai" && <button className="button secondary full-width" type="button" onClick={() => openEditDialog(selected)}><Pencil size={16} /> Edit transaksi</button>}{canManageTransactions && selected.status === "Selesai" && <button className="button danger full-width" type="button" disabled={cancelTransaction.isPending} onClick={() => { if (window.confirm(`Batalkan transaksi ${selected.invoiceNumber}? Stok akan dikembalikan dan omzet akan disesuaikan.`)) cancelTransaction.mutate({ id: selected.id }); }}><Ban size={16} /> Batalkan transaksi</button>}{selected.status === "Dibatalkan" && <p className="cancelled-notice">Transaksi ini sudah dibatalkan. Riwayat tetap tersimpan.</p>}<button className="button secondary full-width" onClick={() => window.print()}>Cetak bukti transaksi</button></>}</DialogContent></Dialog>
+    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <DialogContent className="expense-dialog">
+        <DialogTitle>Edit transaksi</DialogTitle>
+        <DialogDescription>Ubah jumlah item dan diskon. Harga mengikuti harga menu saat ini; stok disesuaikan otomatis.</DialogDescription>
+        <div className="form-grid expense-form">
+          {editItems.map((item) => {
+            const transactionItem = selected?.items.find((current) => current.productId === item.productId);
+            return <label key={item.productId}>{transactionItem?.productName ?? "Produk"}<input type="number" min="1" max="999" value={item.quantity} onChange={(event) => setEditItems((current) => current.map((entry) => entry.productId === item.productId ? { ...entry, quantity: Math.max(1, Math.min(999, Number(event.target.value) || 1)) } : entry))} /></label>;
+          })}
+          <label>Diskon (Rp)<input type="number" min="0" step="1" value={editDiscount} onChange={(event) => setEditDiscount(event.target.value)} /></label>
+          <div className="expense-form-actions"><button type="button" className="button secondary" onClick={() => setIsEditDialogOpen(false)}>Batal</button><button type="button" className="button primary" disabled={updateTransaction.isPending || !editItems.length} onClick={saveTransactionEdit}>{updateTransaction.isPending ? "Menyimpan..." : "Simpan perubahan"}</button></div>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>;
 }
