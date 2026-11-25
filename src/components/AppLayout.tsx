@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react"; // [MODIFIED]
 import { useQueryClient } from "@tanstack/react-query";
-import { ChartNoAxesColumnIncreasing, LogOut, Package, ReceiptText, Settings2, ShoppingBag, Store, UserRound } from "lucide-react";
+import { ChartNoAxesColumnIncreasing, LogOut, Package, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound } from "lucide-react"; // [MODIFIED]
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -21,6 +21,12 @@ export default function AppLayout() {
   const queryClient = useQueryClient();
   const utils = trpc.useUtils();
   const { data: session } = useAuth();
+  // [ADDED] Mobile-only header interaction state and outside-click references.
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileProfileRef = useRef<HTMLDivElement>(null);
   const switchOutlet = trpc.store.switchOutlet.useMutation({
     onSuccess: ({ activeOutletId }, variables) => {
       utils.auth.me.setData(undefined, (current) => current ? { ...current, activeOutletId } : current);
@@ -40,6 +46,38 @@ export default function AppLayout() {
   });
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [pathname]);
+
+  // [ADDED] Close mobile search when the user clicks or taps outside the input.
+  useEffect(() => {
+    if (!isMobileSearchOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!mobileSearchRef.current?.contains(event.target as Node)) setIsMobileSearchOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMobileSearchOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileSearchOpen]);
+
+  // [ADDED] Focus the search field as soon as its expanded state is rendered.
+  useEffect(() => {
+    if (isMobileSearchOpen) mobileSearchInputRef.current?.focus();
+  }, [isMobileSearchOpen]);
+
+  // [ADDED] Dismiss the mobile profile menu when interaction moves outside it.
+  useEffect(() => {
+    if (!isMobileProfileOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!mobileProfileRef.current?.contains(event.target as Node)) setIsMobileProfileOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isMobileProfileOpen]);
   if (!session) return null;
   const { principal, store, outlets, activeOutletId } = session;
   const activeOutlet = outlets.find((outlet) => outlet.id === activeOutletId);
@@ -56,10 +94,44 @@ export default function AppLayout() {
       </nav>
       <div className="sidebar-foot"><UserRound size={18} /><div><strong>{principal.name}</strong><span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span></div><button className="icon-button" onClick={() => logout.mutate()} disabled={logout.isPending} aria-label="Keluar dari akun"><LogOut size={17} /></button></div>
     </aside>
+    {/* [MODIFIED] Mobile header: animated search replaces the wordmark; account and outlet actions live in the profile menu. */}
     <header className="mobile-workspace-bar">
-      <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
-      <div className="mobile-outlet"><strong>{store.name}</strong>{outletControl}</div>
-      <button className="icon-button" onClick={() => logout.mutate()} disabled={logout.isPending} aria-label="Keluar dari akun"><LogOut size={19} /></button>
+      <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
+        {isMobileSearchOpen ? (
+          <div className="mobile-search-field">
+            <Search size={18} aria-hidden="true" />
+            <input ref={mobileSearchInputRef} type="search" placeholder="Cari..." aria-label="Cari di HeyPost" />
+          </div>
+        ) : (
+          <>
+            <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
+            <button className="icon-button mobile-search-trigger" type="button" onClick={() => setIsMobileSearchOpen(true)} aria-label="Buka pencarian">
+              <Search size={19} />
+            </button>
+          </>
+        )}
+      </div>
+      <div className="mobile-profile-menu" ref={mobileProfileRef}>
+        <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil">
+          <UserRound size={19} />
+        </button>
+        {isMobileProfileOpen && (
+          <div className="mobile-profile-popover">
+            <div className="mobile-profile-identity">
+              <strong>{principal.name}</strong>
+              <span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span>
+            </div>
+            <div className="mobile-profile-outlet">
+              <strong>{store.name}</strong>
+              {outletControl}
+            </div>
+            <button className="mobile-profile-logout" type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>
+              <LogOut size={17} />
+              <span>Keluar</span>
+            </button>
+          </div>
+        )}
+      </div>
     </header>
     <main className="main-workspace"><div key={activeOutletId}><Outlet /></div></main>
     <nav className="bottom-nav" aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
