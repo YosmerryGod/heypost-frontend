@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useOutletContext } from "react-router";
 import {
   AlertCircle,
   Banknote,
@@ -69,6 +70,8 @@ function ProductImage({ src, name, className = "" }: { src: string; name: string
 export default function PosPage() {
   const { data, isLoading, error, refetch } = trpc.pos.bootstrap.useQuery();
   const { data: session } = useAuth();
+  // [ADDED] Report cart quantity and expose the existing cart dialog to the app header.
+  const { registerMobileCart } = useOutletContext<{ registerMobileCart: (count: number, openCart: (() => void) | null) => void }>();
   const [category, setCategory] = useState(0);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Cart>({});
@@ -96,6 +99,11 @@ export default function PosPage() {
     [products, cart],
   );
   const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
+  // [ADDED] Keep the header badge synchronized with the total quantity in the cart.
+  useEffect(() => {
+    registerMobileCart(itemCount, () => setCartOpen(true));
+  }, [itemCount, registerMobileCart]);
+  useEffect(() => () => registerMobileCart(0, null), [registerMobileCart]);
   const subtotal = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
   const appliedDiscount = Math.min(discount, subtotal);
   const total = Math.max(0, subtotal - appliedDiscount);
@@ -181,9 +189,6 @@ export default function PosPage() {
           <h1>Pilih produk</h1>
           <p><CalendarDays size={15} aria-hidden="true" />{new Intl.DateTimeFormat("id-ID", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
         </div>
-        <button className="cashier-mobile-cart-button" type="button" onClick={() => setCartOpen(true)} aria-label={`Buka pesanan, ${itemCount} item`}>
-          <ShoppingBag size={22} />{itemCount > 0 && <b>{itemCount > 99 ? "99+" : itemCount}</b>}
-        </button>
       </header>
 
       <div className="cashier-controls">
@@ -242,10 +247,6 @@ export default function PosPage() {
     </section>
 
     <aside className="cashier-order cashier-order-desktop" aria-label="Pesanan saat ini">{cartPanel}</aside>
-    {itemCount > 0 && <button className="cashier-mobile-summary" type="button" onClick={() => setCartOpen(true)}>
-      <span><ShoppingBag size={20} /><span><b>{itemCount} item</b><small>Lihat pesanan</small></span></span>
-      <strong>{rupiah(total)}</strong><ChevronRight size={20} />
-    </button>}
 
     <Dialog open={cartOpen} onOpenChange={setCartOpen}>
       <DialogContent className="cashier-cart-dialog" showCloseButton={false}>
