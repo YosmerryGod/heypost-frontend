@@ -9,11 +9,14 @@ import type { Role } from "@/hooks/useAuth";
 
 const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: Role[] }[] = [
   { to: "/", label: "Kasir", icon: ShoppingBag, roles: ["owner", "manager", "kasir"] },
-  { to: "/transaksi", label: "Transaksi", icon: ReceiptText, roles: ["owner", "manager", "kasir"] },
+  { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"] },
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"] },
   { to: "/pengaturan", label: "Pengaturan", icon: Settings2, roles: ["owner"] },
 ];
+
+// [ADDED] Only the two most-used destinations remain in the mobile bottom navigation.
+const bottomNavigationPaths = new Set(["/", "/transaksi"]);
 
 export default function AppLayout() {
   const { pathname } = useLocation();
@@ -89,6 +92,9 @@ export default function AppLayout() {
   const { principal, store, outlets, activeOutletId } = session;
   const activeOutlet = outlets.find((outlet) => outlet.id === activeOutletId);
   const items = navigation.filter((item) => item.roles.includes(principal.role));
+  // [ADDED] Secondary destinations are available from the profile menu instead of the bottom bar.
+  const profileItems = items.filter((item) => !bottomNavigationPaths.has(item.to));
+  const bottomItems = items.filter((item) => bottomNavigationPaths.has(item.to));
   const outletControl = principal.role === "owner" ? <select aria-label="Pilih outlet aktif" value={activeOutletId} disabled={switchOutlet.isPending} onChange={(event) => switchOutlet.mutate({ outletId: Number(event.target.value) })}>{outlets.filter((outlet) => outlet.active).map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}</select> : <span>{activeOutlet?.name ?? "Outlet aktif"}</span>;
 
   return <div className="app-shell">
@@ -137,6 +143,13 @@ export default function AppLayout() {
                 <strong>{store.name}</strong>
                 {outletControl}
               </div>
+              {/* [ADDED] Secondary app pages are grouped inside the profile menu. */}
+              {profileItems.length > 0 && <nav className="mobile-profile-links" aria-label="Menu lainnya">
+                {profileItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} onClick={() => setIsMobileProfileOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
+                  <Icon size={17} />
+                  <span>{label}</span>
+                </NavLink>)}
+              </nav>}
               <button className="mobile-profile-logout" type="button" onClick={() => logout.mutate()} disabled={logout.isPending}>
                 <LogOut size={17} />
                 <span>Keluar</span>
@@ -147,8 +160,8 @@ export default function AppLayout() {
       </div>
     </header>
     <main className="main-workspace"><div key={activeOutletId}><Outlet context={{ registerMobileCart }} /></div></main>
-    <nav className="bottom-nav" aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
-      {items.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => isActive ? "active" : ""} aria-label={label} title={label}>{({ isActive }) => <><Icon size={21} />{isActive && <span>{label}</span>}</>}</NavLink>)}
+    <nav className="bottom-nav" aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}>
+      {bottomItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => isActive ? "active" : ""} aria-label={label} title={label}>{({ isActive }) => <><Icon size={21} />{isActive && <span>{label}</span>}</>}</NavLink>)}
     </nav>
   </div>;
 }
