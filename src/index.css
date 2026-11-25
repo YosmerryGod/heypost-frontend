@@ -880,3 +880,7 @@ body { color: var(--ink-900); }
   .mobile-workspace-bar.search-open .mobile-admin-brand { display: none; }
   .mobile-workspace-bar.search-open .mobile-admin-add { display: none; }
 }
+
+/* [ADDED] Desktop access to the same compact add menu. */
+.products-desktop-add { display: inline-flex; width: 44px; height: 44px; align-items: center; justify-content: center; }
+@media (max-width: 768px) { .products-desktop-add { display: none; } }
