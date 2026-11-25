@@ -24,6 +24,8 @@ export default function ExpensesPage() {
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // [ADDED] Menyimpan pengeluaran yang sedang dibuka pada dialog detail.
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(null);
   const [category, setCategory] = useState(categories[0]);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -54,6 +56,7 @@ export default function ExpensesPage() {
   const cancelExpense = trpc.expenses.cancel.useMutation({
     onSuccess: async () => {
       await utils.expenses.list.invalidate();
+      setSelectedExpense((current) => current ? { ...current, status: "Dibatalkan" } : null);
       toast.success("Pengeluaran berhasil dibatalkan");
     },
     onError: (mutationError) => toast.error(mutationError.message),
@@ -122,9 +125,28 @@ export default function ExpensesPage() {
         : error ? <ErrorState message={error.message} retry={() => refetch()} />
         : rows.length === 0 ? <div className="state-panel expense-empty"><ReceiptText size={30} /><h2>Belum ada pengeluaran</h2><p>Catat biaya operasional agar arus kas outlet lebih mudah dipantau.</p><button className="button primary" onClick={() => setIsDialogOpen(true)}><Plus size={17} /> Catat pengeluaran</button></div>
         : <div className="expense-table-wrap"><table className="expense-table"><thead><tr><th>Tanggal</th><th>Kategori</th><th>Keterangan</th><th>Pembayaran</th><th>Status</th><th className="amount-cell">Nominal</th>{canCancelExpenses && <th className="expense-action-cell">Aksi</th>}</tr></thead><tbody>
-          {rows.map((row) => <tr key={row.id} className={row.status === "Dibatalkan" ? "expense-cancelled-row" : ""}><td><strong>{formatDate(new Date(`${row.expenseDate}T00:00:00`), false)}</strong></td><td><span className="expense-category">{row.category}</span></td><td>{row.description || "—"}</td><td>{row.paymentMethod}</td><td><span className={`expense-status ${row.status === "Dibatalkan" ? "is-cancelled" : "is-active"}`}>{row.status}</span></td><td className="amount-cell"><strong>{rupiah(row.amount)}</strong></td>{canCancelExpenses && <td className="expense-action-cell">{row.status === "Aktif" ? <button className="expense-cancel-button" type="button" title="Batalkan pengeluaran" aria-label={`Batalkan pengeluaran ${row.category}`} disabled={cancelExpense.isPending} onClick={() => handleCancel(row)}><Ban size={16} /></button> : <span className="expense-no-action">—</span>}</td>}</tr>)}
+          {rows.map((row) => <tr key={row.id} className={`expense-clickable-row ${row.status === "Dibatalkan" ? "expense-cancelled-row" : ""}`} onClick={() => setSelectedExpense(row)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedExpense(row); } }} tabIndex={0} aria-label={`Lihat detail pengeluaran ${row.category}`}><td><strong>{formatDate(new Date(`${row.expenseDate}T00:00:00`), false)}</strong></td><td><span className="expense-category">{row.category}</span></td><td>{row.description || "—"}</td><td>{row.paymentMethod}</td><td><span className={`expense-status ${row.status === "Dibatalkan" ? "is-cancelled" : "is-active"}`}>{row.status}</span></td><td className="amount-cell"><strong>{rupiah(row.amount)}</strong></td>{canCancelExpenses && <td className="expense-action-cell" onClick={(event) => event.stopPropagation()}>{row.status === "Aktif" ? <button className="expense-cancel-button" type="button" title="Batalkan pengeluaran" aria-label={`Batalkan pengeluaran ${row.category}`} disabled={cancelExpense.isPending} onClick={() => handleCancel(row)}><Ban size={16} /></button> : <span className="expense-no-action">—</span>}</td>}</tr>)}
         </tbody></table></div>}
     </section>
+
+    {/* [ADDED] Detail pengeluaran dapat dibuka dengan menekan baris pada daftar. */}
+    <Dialog open={!!selectedExpense} onOpenChange={(open) => { if (!open) setSelectedExpense(null); }}>
+      <DialogContent className="expense-dialog">
+        {selectedExpense && <>
+          <DialogTitle>Detail pengeluaran</DialogTitle>
+          <DialogDescription>{formatDate(new Date(`${selectedExpense.expenseDate}T00:00:00`), false)} · {selectedExpense.status}</DialogDescription>
+          <div className="expense-detail-content">
+            <div><span>Kategori</span><strong>{selectedExpense.category}</strong></div>
+            <div><span>Keterangan</span><strong>{selectedExpense.description || "—"}</strong></div>
+            <div><span>Metode pembayaran</span><strong>{selectedExpense.paymentMethod}</strong></div>
+            <div><span>Nominal</span><strong>{rupiah(selectedExpense.amount)}</strong></div>
+          </div>
+          {selectedExpense.status === "Dibatalkan" && <p className="expense-detail-cancelled">Pengeluaran ini sudah dibatalkan. Riwayat tetap tersimpan.</p>}
+          {canCancelExpenses && selectedExpense.status === "Aktif" && <button className="button danger full-width" type="button" disabled={cancelExpense.isPending} onClick={() => handleCancel(selectedExpense)}><Ban size={16} /> {cancelExpense.isPending ? "Membatalkan..." : "Batalkan pengeluaran"}</button>}
+          <button className="button secondary full-width" type="button" onClick={() => setSelectedExpense(null)}>Tutup</button>
+        </>}
+      </DialogContent>
+    </Dialog>
 
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent className="expense-dialog">
