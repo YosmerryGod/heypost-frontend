@@ -11,7 +11,8 @@ const PosPage = lazy(() => import("@/pages/PosPage"));
 const TransactionsPage = lazy(() => import("@/pages/TransactionsPage"));
 const ProductsPage = lazy(() => import("@/pages/ProductsPage"));
 const ReportsPage = lazy(() => import("@/pages/ReportsPage"));
-const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
+const EmployeesPage = lazy(() => import("@/pages/EmployeesPage"));
+const OutletsPage = lazy(() => import("@/pages/OutletsPage"));
 
 export default function App() {
   return <>
@@ -23,7 +24,9 @@ export default function App() {
         <Route path="/transaksi" element={<TransactionsPage />} />
         <Route path="/produk" element={<RoleGate allow={["owner", "manager"]}><ProductsPage /></RoleGate>} />
         <Route path="/laporan" element={<RoleGate allow={["owner", "manager"]}><ReportsPage /></RoleGate>} />
-        <Route path="/pengaturan" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} />
+        <Route path="/karyawan" element={<RoleGate allow={["owner"]}><EmployeesPage /></RoleGate>} />
+        <Route path="/outlet" element={<RoleGate allow={["owner"]}><OutletsPage /></RoleGate>} />
+        <Route path="/pengaturan" element={<Navigate to="/outlet" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></Suspense>
