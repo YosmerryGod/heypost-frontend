@@ -70,7 +70,7 @@ export default function PosPage() {
   const { data, isLoading, error, refetch } = trpc.pos.bootstrap.useQuery();
   const { data: session } = useAuth();
   // [ADDED] Report cart quantity and expose the existing cart dialog to the app header.
-  const { registerMobileCart } = useOutletContext<{ registerMobileCart: (count: number, openCart: (() => void) | null) => void }>();
+  const { registerMobileCart, mobileSearchQuery } = useOutletContext<{ registerMobileCart: (count: number, openCart: (() => void) | null) => void; mobileSearchQuery: string }>();
   const [cart, setCart] = useState<Cart>({});
   const [orderType, setOrderType] = useState<OrderType>("Makan di tempat");
   const [customer, setCustomer] = useState("");
@@ -83,6 +83,10 @@ export default function PosPage() {
   const [announcement, setAnnouncement] = useState("");
 
   const products = useMemo(() => (data?.products ?? []) as ProductView[], [data]);
+  const visibleProducts = useMemo(() => {
+    const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
+    return query ? products.filter((product) => product.name.toLocaleLowerCase("id-ID").includes(query)) : products;
+  }, [products, mobileSearchQuery]);
   // [MODIFIED] Katalog ditampilkan sebagai daftar per kategori, bukan hasil filter.
   const categoryGroups = useMemo(() => {
     const categories = data?.categories ?? [];
@@ -90,14 +94,14 @@ export default function PosPage() {
       .map((item) => ({
         id: item.id,
         name: item.name,
-        products: products.filter((product) => product.categoryId === item.id),
+        products: visibleProducts.filter((product) => product.categoryId === item.id),
       }))
       .filter((group) => group.products.length > 0);
     const groupedProductIds = new Set(groups.flatMap((group) => group.products.map((product) => product.id)));
-    const uncategorized = products.filter((product) => !groupedProductIds.has(product.id));
+    const uncategorized = visibleProducts.filter((product) => !groupedProductIds.has(product.id));
     if (uncategorized.length > 0) groups.push({ id: 0, name: "Menu lainnya", products: uncategorized });
     return groups;
-  }, [data, products]);
+  }, [data, visibleProducts]);
   const lines = useMemo(
     () => products.filter((product) => cart[product.id]).map((product) => ({ ...product, quantity: cart[product.id] })),
     [products, cart],
@@ -177,6 +181,9 @@ export default function PosPage() {
       {isLoading ? <Loading label="Memuat menu…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : products.length === 0 ? <div className="state-panel cashier-empty-state">
         <PackageOpen size={30} />
         <h2>Belum ada menu</h2>
+      </div> : visibleProducts.length === 0 ? <div className="state-panel cashier-empty-state">
+        <PackageOpen size={30} />
+        <h2>Menu tidak ditemukan</h2>
       </div> : <div className="cashier-category-list">
         {categoryGroups.map((group) => <section className="cashier-menu-group" key={group.id} aria-labelledby={`cashier-category-${group.id}`}>
           <h2 id={`cashier-category-${group.id}`}>{group.name}</h2>
