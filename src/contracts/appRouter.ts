@@ -69,6 +69,7 @@ export const appRouter = t.router({
     logout: procedure.output(z.object({ ok: z.boolean() })).mutation(typeOnly),
   }),
   store: t.router({
+    updateProfile: procedure.input(z.object({ name: z.string() })).output(z.object({ ok: z.boolean(), name: z.string() })).mutation(typeOnly),
     createOutlet: procedure.input(z.object({
       name: z.string(), address: z.string().optional(), copyMenuFromOutletId: z.number().optional(),
     })).output(outlet).mutation(typeOnly),
