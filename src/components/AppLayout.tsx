@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
+import { Building2, ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -13,13 +13,15 @@ const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: 
   { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"] },
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"] },
-  { to: "/pengaturan", label: "Pengaturan", icon: Settings2, roles: ["owner"] },
+  { to: "/outlet", label: "Outlet", icon: Building2, roles: ["owner"] },
+  { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
 ];
 
 const bottomNavigationPaths = new Set(["/", "/transaksi"]);
 const profileNavigation: { to: string; label: string; icon: typeof Package; roles: Role[] }[] = [
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
-  { to: "/pengaturan?tab=employees", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
+  { to: "/outlet", label: "Outlet", icon: Store, roles: ["owner"] },
+  { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"] },
 ];
 
@@ -143,7 +145,7 @@ export default function AppLayout() {
             <div className="mobile-profile-store-name"><Store size={18} /><strong>{store.name}</strong></div>
             <div className="mobile-profile-section-heading"><span>OUTLET</span><span className="mobile-profile-current-label">SAAT INI</span></div>
             <div className="mobile-profile-outlet">{outletControl}</div>
-            {principal.role === "owner" && <button className="mobile-profile-add-outlet" type="button" onClick={() => { setIsMobileProfileOpen(false); navigate("/pengaturan?tab=outlets"); }}><Plus size={17} /><span>Tambah outlet</span></button>}
+            {principal.role === "owner" && <button className="mobile-profile-add-outlet" type="button" onClick={() => { setIsMobileProfileOpen(false); navigate("/outlet"); }}><Plus size={17} /><span>Tambah outlet</span></button>}
             {profileItems.length > 0 && <div className="mobile-profile-menu-group">
               <div className="mobile-profile-section-heading"><span>MENU</span></div>
               <nav className="mobile-profile-links" aria-label="Menu manajemen">{profileItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} onClick={() => setIsMobileProfileOpen(false)} className={({ isActive }) => isActive ? "active" : ""}><Icon size={18} /><span>{label}</span><span className="mobile-profile-link-arrow">›</span></NavLink>)}</nav>
