@@ -16,12 +16,12 @@ export default function AppLayout() {
     <div className="app-shell">
       <aside className="side-nav">
         <NavLink to="/" className="wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
-        <div className="store-switch"><Store size={18} /><div><strong>Kopi Sore</strong><span>Cabang Kemang</span></div></div>
+        <div className="store-switch"><Store size={18} /><div><strong>Ruang kerja</strong><span>Kasir & inventori</span></div></div>
         <nav className="desktop-menu" aria-label="Navigasi utama">
           <p>RUANG KERJA</p>
           {navigation.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => isActive ? "active" : ""}><Icon size={19} /><span>{label}</span></NavLink>)}
         </nav>
-        <div className="sidebar-foot"><span className="online-dot" /><div><strong>Toko buka</strong><span>Semua sistem normal</span></div></div>
+        <div className="sidebar-foot"><span className="sidebar-foot-mark" /><div><strong>heypost POS</strong><span>Operasional toko</span></div></div>
       </aside>
       <main className="main-workspace"><Outlet /></main>
       <nav className="bottom-nav" aria-label="Navigasi utama">
