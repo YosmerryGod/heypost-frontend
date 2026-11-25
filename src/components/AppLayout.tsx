@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChartNoAxesColumnIncreasing, LogOut, Package, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound } from "lucide-react";
+import { Building2, ChartNoAxesColumnIncreasing, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import type { Role } from "@/hooks/useAuth";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: Role[] }[] = [
   { to: "/", label: "Kasir", icon: ShoppingBag, roles: ["owner", "manager", "kasir"] },
@@ -16,6 +17,11 @@ const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: 
 ];
 
 const bottomNavigationPaths = new Set(["/", "/transaksi"]);
+const profileNavigation: { to: string; label: string; icon: typeof Package; roles: Role[] }[] = [
+  { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
+  { to: "/pengaturan?tab=employees", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
+  { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"] },
+];
 
 export default function AppLayout() {
   const { pathname } = useLocation();
@@ -31,6 +37,8 @@ export default function AppLayout() {
     setMobileSearchQuery("");
   }, []);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const [isStoreNameDialogOpen, setIsStoreNameDialogOpen] = useState(false);
+  const [storeNameDraft, setStoreNameDraft] = useState("");
   const mobileSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
@@ -47,6 +55,14 @@ export default function AppLayout() {
       void utils.pos.invalidate();
       void utils.expenses.invalidate();
       toast.success(`Berpindah ke ${outlet?.name ?? "outlet"}`);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const updateStoreProfile = trpc.store.updateProfile.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      setIsStoreNameDialogOpen(false);
+      toast.success("Nama toko berhasil diperbarui");
     },
     onError: (error) => toast.error(error.message),
   });
@@ -94,7 +110,7 @@ export default function AppLayout() {
   const { principal, store, outlets, activeOutletId } = session;
   const activeOutlet = outlets.find((outlet) => outlet.id === activeOutletId);
   const items = navigation.filter((item) => item.roles.includes(principal.role));
-  const profileItems = items.filter((item) => !bottomNavigationPaths.has(item.to));
+  const profileItems = profileNavigation.filter((item) => item.roles.includes(principal.role));
   const bottomItems = items.filter((item) => bottomNavigationPaths.has(item.to));
   const outletControl = principal.role === "owner" ? <select aria-label="Pilih outlet aktif" value={activeOutletId} disabled={switchOutlet.isPending} onChange={(event) => switchOutlet.mutate({ outletId: Number(event.target.value) })}>{outlets.filter((outlet) => outlet.active).map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}</select> : <span>{activeOutlet?.name ?? "Outlet aktif"}</span>;
 
@@ -118,13 +134,37 @@ export default function AppLayout() {
         <div className="mobile-profile-menu" ref={mobileProfileRef}>
           <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil"><UserRound size={19} /></button>
           {isMobileProfileOpen && <div className="mobile-profile-popover">
-            <div className="mobile-profile-identity"><strong>{principal.name}</strong><span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span></div>
-            <div className="mobile-profile-outlet"><strong>{store.name}</strong>{outletControl}</div>
-            {profileItems.length > 0 && <nav className="mobile-profile-links" aria-label="Menu lainnya">{profileItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} onClick={() => setIsMobileProfileOpen(false)} className={({ isActive }) => isActive ? "active" : ""}><Icon size={17} /><span>{label}</span></NavLink>)}</nav>}
+            <div className="mobile-profile-section-label">AKUN</div>
+            <div className="mobile-profile-identity">
+              <div className="mobile-profile-avatar"><UserRound size={21} /></div>
+              <div className="mobile-profile-account"><strong>{principal.name}</strong><span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span></div>
+            </div>
+            <div className="mobile-profile-email"><Mail size={15} /><span>{principal.email || "Email tidak tersedia"}</span></div>
+            <div className="mobile-profile-divider" />
+            <div className="mobile-profile-section-heading"><span>TOKO</span>{principal.role === "owner" && <button type="button" onClick={() => { setStoreNameDraft(store.name); setIsStoreNameDialogOpen(true); }} aria-label="Edit nama toko"><Pencil size={15} /></button>}</div>
+            <div className="mobile-profile-store-name"><Store size={18} /><strong>{store.name}</strong></div>
+            <div className="mobile-profile-section-heading"><span>OUTLET</span><span className="mobile-profile-current-label">SAAT INI</span></div>
+            <div className="mobile-profile-outlet">{outletControl}</div>
+            {principal.role === "owner" && <button className="mobile-profile-add-outlet" type="button" onClick={() => { setIsMobileProfileOpen(false); navigate("/pengaturan?tab=outlets"); }}><Plus size={17} /><span>Tambah outlet</span></button>}
+            {profileItems.length > 0 && <div className="mobile-profile-menu-group">
+              <div className="mobile-profile-section-heading"><span>MENU</span></div>
+              <nav className="mobile-profile-links" aria-label="Menu manajemen">{profileItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} onClick={() => setIsMobileProfileOpen(false)} className={({ isActive }) => isActive ? "active" : ""}><Icon size={18} /><span>{label}</span><span className="mobile-profile-link-arrow">›</span></NavLink>)}</nav>
+            </div>}
             <button className="mobile-profile-logout" type="button" onClick={() => logout.mutate()} disabled={logout.isPending}><LogOut size={17} /><span>Keluar</span></button>
           </div>}
         </div>
       </div>
+      <Dialog open={isStoreNameDialogOpen} onOpenChange={setIsStoreNameDialogOpen}>
+        <DialogContent className="settings-dialog">
+          <DialogTitle>Edit nama toko</DialogTitle>
+          <DialogDescription>Nama ini akan digunakan sebagai identitas toko di HeyPost.</DialogDescription>
+          <form className="mobile-store-name-form" onSubmit={(event) => { event.preventDefault(); updateStoreProfile.mutate({ name: storeNameDraft.trim() }); }}>
+            <label htmlFor="mobile-store-name">Nama toko</label>
+            <input id="mobile-store-name" value={storeNameDraft} onChange={(event) => setStoreNameDraft(event.target.value)} minLength={2} maxLength={120} required autoFocus />
+            <div className="dialog-actions"><button type="button" className="button secondary" onClick={() => setIsStoreNameDialogOpen(false)}>Batal</button><button type="submit" className="button primary" disabled={updateStoreProfile.isPending || storeNameDraft.trim().length < 2}>{updateStoreProfile.isPending ? "Menyimpan..." : "Simpan perubahan"}</button></div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </header>
     <main className="main-workspace"><div key={activeOutletId}><Outlet context={{ registerMobileCart, mobileSearchQuery }} /></div></main>
     <nav className="bottom-nav" aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}>
