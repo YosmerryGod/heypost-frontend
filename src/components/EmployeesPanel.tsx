@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Copy, KeyRound, Pencil, Plus, Printer, RefreshCw, Search, UserRound } from "lucide-react";
+import { useOutletContext } from "react-router";
+import { Copy, Pencil, Printer, RefreshCw, UserRound } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -26,7 +27,9 @@ export default function EmployeesPanel() {
   const { data: session } = useAuth();
   const utils = trpc.useUtils();
   const { data, isLoading, error, refetch } = trpc.employees.list.useQuery();
-  const [search, setSearch] = useState("");
+  const { mobileSearchQuery } = useOutletContext<{ mobileSearchQuery: string }>();
+  const [roleFilter, setRoleFilter] = useState<"all" | EmployeeRole>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [now] = useState(Date.now);
   const [form, setForm] = useState<EmployeeForm | null>(null);
@@ -61,7 +64,7 @@ export default function EmployeesPanel() {
     window.addEventListener("heypost:admin-filter", filter);
     return () => { window.removeEventListener("heypost:admin-add", add); window.removeEventListener("heypost:admin-filter", filter); };
   }, [session]);
-  const filtered = useMemo(() => (data ?? []).filter((employee) => (employee.name + " " + employee.outletName + " " + employee.role).toLowerCase().includes(search.toLowerCase())), [data, search]);
+  const filtered = useMemo(() => (data ?? []).filter((employee) => (employee.name + " " + employee.outletName + " " + employee.role).toLowerCase().includes(mobileSearchQuery.toLowerCase()) && (roleFilter === "all" || employee.role === roleFilter) && (statusFilter === "all" || (statusFilter === "active" ? employee.active : !employee.active))), [data, mobileSearchQuery, roleFilter, statusFilter]);
   const openCreate = () => setForm({ name: "", role: "kasir", outletId: session?.activeOutletId ?? outlets[0]?.id ?? 0, pin: "", active: true });
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -72,8 +75,7 @@ export default function EmployeesPanel() {
   const pending = create.isPending || update.isPending;
 
   return <section className="settings-section" aria-labelledby="employee-list-title">
-    <div className="settings-section-head"><div><h2 id="employee-list-title">Daftar karyawan</h2><p>Setiap karyawan hanya ditugaskan ke satu outlet dan masuk dengan barcode + PIN.</p></div></div>
-    <div className="list-toolbar employee-toolbar"><label className="search-field admin-page-search"><Search size={19} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama, role, atau outlet…" aria-label="Cari karyawan" /></label><span>{filtered.length} karyawan</span></div>
+    <div className="settings-section-head"><div><h2 id="employee-list-title">Karyawan</h2></div><span>{filtered.length} karyawan</span></div>
     {isLoading ? <Loading label="Memuat daftar karyawan…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filtered.length === 0 ? <div className="state-panel employee-empty"><UserRound size={30} /><h3>{data?.length ? "Karyawan tidak ditemukan" : "Belum ada karyawan"}</h3><p>{data?.length ? "Coba kata kunci pencarian lain." : "Tambahkan manager atau kasir, lalu berikan kartu aksesnya."}</p>{!data?.length && <button className="button primary" onClick={openCreate}>Tambah karyawan pertama</button>}</div> : <div className="settings-list employee-list">
       {filtered.map((employee) => {
         const locked = employee.lockedUntil && employee.lockedUntil.getTime() > now;
@@ -84,8 +86,7 @@ export default function EmployeesPanel() {
         </article>;
       })}
     </div>}
-    <Dialog open={filterOpen} onOpenChange={setFilterOpen}><DialogContent className="settings-dialog"><DialogTitle>Filter karyawan</DialogTitle><DialogDescription>Filter role karyawan.</DialogDescription><label>Role<select onChange={(event) => setSearch(event.target.value === "all" ? "" : event.target.value)}><option value="all">Semua role</option><option value="manager">Manager</option><option value="kasir">Kasir</option></select></label><div className="dialog-actions"><button className="button primary" onClick={() => setFilterOpen(false)}>Terapkan</button></div></DialogContent></Dialog>
-    <div className="settings-note"><KeyRound size={18} /><p>Demi keamanan, backend hanya menyimpan hash barcode dan PIN. Barcode lengkap hanya muncul sekali saat dibuat atau diganti.</p></div>
+    <Dialog open={filterOpen} onOpenChange={setFilterOpen}><DialogContent className="settings-dialog"><DialogTitle>Filter karyawan</DialogTitle><div className="form-grid"><label>Role<select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as "all" | EmployeeRole)}><option value="all">Semua role</option><option value="manager">Manager</option><option value="kasir">Kasir</option></select></label><label>Status<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}><option value="all">Semua status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select></label></div><div className="dialog-actions"><button className="button secondary" onClick={() => { setRoleFilter("all"); setStatusFilter("all"); }}>Reset</button><button className="button primary" onClick={() => setFilterOpen(false)}>Terapkan</button></div></DialogContent></Dialog>
     <Dialog open={!!form} onOpenChange={(open) => { if (!open && !pending) setForm(null); }}><DialogContent className="settings-dialog">{form && <form onSubmit={submit}>
       <DialogTitle>{form.id ? "Edit karyawan" : "Tambah karyawan"}</DialogTitle><DialogDescription>{form.id ? "Perubahan akses akan menutup sesi karyawan yang sedang aktif." : "Buat akses untuk satu outlet. Kartu barcode muncul setelah disimpan."}</DialogDescription>
       <div className="form-grid"><label className="full">Nama karyawan<input required minLength={2} maxLength={100} autoComplete="off" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Nama lengkap" /></label><label>Role<select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value as EmployeeRole })}><option value="kasir">Kasir</option><option value="manager">Manager</option></select></label><label>Outlet<select required value={form.outletId} onChange={(event) => setForm({ ...form, outletId: Number(event.target.value) })}><option value={0} disabled>Pilih outlet</option>{outlets.map((outlet) => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}</select></label><label className="full">{form.id ? "PIN baru (opsional)" : "PIN 6 digit"}<input required={!form.id} type="password" inputMode="numeric" pattern="[0-9]{6}" minLength={form.id ? undefined : 6} maxLength={6} autoComplete="new-password" value={form.pin} onChange={(event) => setForm({ ...form, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} placeholder={form.id ? "Kosongkan jika tidak diganti" : "6 digit angka"} /><small>{form.id ? "Mengisi PIN baru juga akan membuka kunci login dan menutup sesi lama." : "Jangan gunakan PIN yang mudah ditebak seperti 123456."}</small></label>{form.id && <label className="checkbox-field full"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /><span><strong>Akses aktif</strong><small>Karyawan nonaktif tidak dapat masuk dan sesi lamanya ditutup.</small></span></label>}</div>
