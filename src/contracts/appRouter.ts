@@ -10,6 +10,7 @@ const typeOnly = () => { throw new Error("Kontrak tipe tidak dapat dijalankan");
 
 const role = z.enum(["owner", "manager", "kasir"]);
 const employeeRole = z.enum(["manager", "kasir"]);
+const permission = z.enum(["pos.access", "history.daily.view", "invoice.edit", "expenses.daily.create", "expenses.daily.view", "menu.create", "menu.edit", "stock.edit", "reports.sales.view", "outlets.create", "employees.create", "receipt.settings"]);
 const store = z.object({ id: z.number(), name: z.string(), createdAt: z.date(), updatedAt: z.date() });
 const outlet = z.object({
   id: z.number(), storeId: z.number(), name: z.string(), address: z.string().nullable(),
@@ -18,7 +19,7 @@ const outlet = z.object({
 const authPayload = z.object({
   principal: z.object({
     name: z.string(), email: z.string().nullable(), role,
-    userId: z.number().nullable(), employeeId: z.number().nullable(),
+    userId: z.number().nullable(), employeeId: z.number().nullable(), permissions: z.array(permission),
   }),
   store,
   outlets: z.array(outlet),
@@ -43,7 +44,7 @@ const transaction = z.object({
 const transactionItem = saleItem.extend({ id: z.number(), transactionId: z.number(), productId: z.number() });
 const employee = z.object({
   id: z.number(), name: z.string(), role: employeeRole, outletId: z.number(), outletName: z.string(),
-  active: z.boolean(), lockedUntil: z.date().nullable(), lastLoginAt: z.date().nullable(), createdAt: z.date(),
+  active: z.boolean(), permissions: z.array(permission), lockedUntil: z.date().nullable(), lastLoginAt: z.date().nullable(), createdAt: z.date(),
 });
 const summary = z.object({
   revenue: z.number(), orders: z.number(), itemsSold: z.number(), average: z.number(),
@@ -81,14 +82,14 @@ export const appRouter = t.router({
   employees: t.router({
     list: procedure.output(z.array(employee)).query(typeOnly),
     create: procedure.input(z.object({
-      name: z.string(), role: employeeRole, outletId: z.number(), pin: z.string(),
+      name: z.string(), role: employeeRole, outletId: z.number(), pin: z.string(), permissions: z.array(permission).optional(),
     })).output(z.object({
       id: z.number(), name: z.string(), role: employeeRole, outletId: z.number(),
-      active: z.boolean(), createdAt: z.date(), barcode: z.string(),
+      active: z.boolean(), permissions: z.string(), createdAt: z.date(), barcode: z.string(),
     })).mutation(typeOnly),
     update: procedure.input(z.object({
       id: z.number(), name: z.string().optional(), role: employeeRole.optional(), outletId: z.number().optional(),
-      active: z.boolean().optional(), pin: z.string().optional(),
+      active: z.boolean().optional(), pin: z.string().optional(), permissions: z.array(permission).optional(),
     })).output(z.object({ ok: z.boolean() })).mutation(typeOnly),
     regenerateBarcode: procedure.input(z.object({ id: z.number() })).output(z.object({ barcode: z.string() })).mutation(typeOnly),
   }),
