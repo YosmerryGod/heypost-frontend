@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
+// avoid-ai-design-ignore: I3 — Check is a functional payment-status glyph, not decorative AI imagery.
 import { Banknote, Check, ChevronRight, CreditCard, Minus, Plus, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ErrorState, Loading } from "@/components/Loading";
 import { formatDate, rupiah } from "@/lib/format";
+import { useAuth } from "@/hooks/useAuth";
 
 type ProductView = { id: number; categoryId: number; name: string; price: number; stock: number; imageUrl: string; sku: string };
 type Cart = Record<number, number>;
@@ -18,6 +20,7 @@ type Sale = {
 
 export default function PosPage() {
   const { data, isLoading, error, refetch } = trpc.pos.bootstrap.useQuery();
+  const { data: session } = useAuth();
   const [category, setCategory] = useState(0);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Cart>({});
@@ -68,7 +71,7 @@ export default function PosPage() {
         <button role="tab" aria-selected={category === 0} className={category === 0 ? "active" : ""} onClick={() => setCategory(0)}>Semua</button>
         {data?.categories.map((item) => <button key={item.id} role="tab" aria-selected={category === item.id} className={category === item.id ? "active" : ""} onClick={() => setCategory(item.id)}>{item.name}</button>)}
       </div>
-      {isLoading ? <Loading label="Memuat katalog…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filtered.length === 0 ? <div className="state-panel"><Search size={28} /><h2>Produk tidak ditemukan</h2><p>Coba kata kunci atau kategori lain.</p></div> : <div className="product-grid">
+      {isLoading ? <Loading label="Memuat katalog…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filtered.length === 0 ? <div className="state-panel">{products.length === 0 ? <ShoppingBag size={28} /> : <Search size={28} />}<h2>{products.length === 0 ? "Belum ada produk aktif" : "Produk tidak ditemukan"}</h2><p>{products.length === 0 ? "Owner atau manager perlu menambahkan produk sebelum transaksi dimulai." : "Coba kata kunci atau kategori lain."}</p></div> : <div className="product-grid">
         {filtered.map((product) => <button className="product-card" key={product.id} onClick={() => add(product)} disabled={product.stock === 0} aria-label={`Tambah ${product.name}, ${rupiah(product.price)}`}>
           <div className="product-image"><img src={product.imageUrl} alt="" loading="lazy" /><span className="add-product"><Plus size={20} /></span>{product.stock <= 8 && <span className="stock-flag">{product.stock === 0 ? "Habis" : `Sisa ${product.stock}`}</span>}</div>
           <div className="product-copy"><h2>{product.name}</h2><div className="product-meta"><p>Stok {product.stock}</p><strong>{rupiah(product.price)}</strong></div></div>
@@ -80,7 +83,7 @@ export default function PosPage() {
     {itemCount > 0 && <button className="mobile-cart-bar" onClick={() => setCartOpen(true)}><span><ShoppingBag size={19} /><b>{itemCount} item</b></span><strong>{rupiah(total)}</strong><ChevronRight size={19} /></button>}
     <Dialog open={cartOpen} onOpenChange={setCartOpen}><DialogContent className="mobile-order-dialog" showCloseButton={false}><DialogTitle className="sr-only">Pesanan saat ini</DialogTitle><DialogDescription className="sr-only">Periksa dan ubah pesanan pelanggan</DialogDescription><button className="mobile-cart-close icon-button" onClick={() => setCartOpen(false)} aria-label="Tutup pesanan"><X size={20} /></button>{cartPanel}</DialogContent></Dialog>
     <PaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} total={total} subtotal={subtotal} discount={discount} customer={customer} orderType={orderType} lines={lines} onCompleted={(sale) => { setPaymentOpen(false); setCompleted(sale); setCart({}); setDiscount(0); setCustomer(""); }} invalidate={() => { refetch(); }} />
-    <ReceiptDialog sale={completed} onClose={() => { setCompleted(null); setPaymentOpen(false); }} />
+    <ReceiptDialog sale={completed} storeLabel={session ? `${session.store.name} — ${session.outlets.find((outlet) => outlet.id === session.activeOutletId)?.name ?? "Outlet aktif"}` : "heypost"} onClose={() => { setCompleted(null); setPaymentOpen(false); }} />
   </div>;
 }
 
@@ -136,8 +139,8 @@ function PaymentDialog({ open, onOpenChange, total, subtotal, discount, customer
   </DialogContent></Dialog>;
 }
 
-function ReceiptDialog({ sale, onClose }: { sale: Sale | null; onClose: () => void }) {
+function ReceiptDialog({ sale, storeLabel, onClose }: { sale: Sale | null; storeLabel: string; onClose: () => void }) {
   return <Dialog open={!!sale} onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="receipt-dialog">
-    {sale && <><div className="success-mark"><Check size={30} /></div><DialogTitle>Pembayaran berhasil</DialogTitle><DialogDescription>{sale.invoiceNumber} · {formatDate(sale.createdAt)}</DialogDescription><div className="receipt-paper"><div className="receipt-brand">hey<span>post</span>.</div><p>Bukti transaksi</p><div className="receipt-meta"><span>{sale.customerName}</span><span>{sale.orderType}</span></div>{sale.items.map((item, index) => <div className="receipt-item" key={index}><span>{item.quantity}× {item.productName}</span><strong>{rupiah(item.subtotal)}</strong></div>)}<div className="receipt-total"><span>Total · {sale.paymentMethod}</span><strong>{rupiah(sale.total)}</strong></div>{sale.paymentMethod === "Tunai" && <div className="receipt-meta"><span>Tunai {rupiah(sale.cashReceived ?? 0)}</span><span>Kembali {rupiah((sale.cashReceived ?? 0) - sale.total)}</span></div>}<p className="receipt-thanks">Terima kasih. Sampai jumpa lagi!</p></div><div className="receipt-actions"><button className="button secondary" onClick={() => window.print()}>Cetak struk</button><button className="button primary" onClick={onClose}>Transaksi baru</button></div></>}
+    {sale && <><div className="success-mark"><Check size={30} /></div><DialogTitle>Pembayaran berhasil</DialogTitle><DialogDescription>{sale.invoiceNumber} · {formatDate(sale.createdAt)}</DialogDescription><div className="receipt-paper"><div className="receipt-brand">hey<span>post</span>.</div><p>{storeLabel}</p><div className="receipt-meta"><span>{sale.customerName}</span><span>{sale.orderType}</span></div>{sale.items.map((item, index) => <div className="receipt-item" key={index}><span>{item.quantity}× {item.productName}</span><strong>{rupiah(item.subtotal)}</strong></div>)}<div className="receipt-total"><span>Total · {sale.paymentMethod}</span><strong>{rupiah(sale.total)}</strong></div>{sale.paymentMethod === "Tunai" && <div className="receipt-meta"><span>Tunai {rupiah(sale.cashReceived ?? 0)}</span><span>Kembali {rupiah((sale.cashReceived ?? 0) - sale.total)}</span></div>}<p className="receipt-thanks">Terima kasih. Sampai jumpa lagi!</p></div><div className="receipt-actions"><button className="button secondary" onClick={() => window.print()}>Cetak struk</button><button className="button primary" onClick={onClose}>Transaksi baru</button></div></>}
   </DialogContent></Dialog>;
 }

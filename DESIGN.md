@@ -55,6 +55,8 @@ Archivo Variable dipakai untuk judul halaman dan angka utama. Figtree Variable d
 
 Desktop memakai navigasi kiri, katalog yang mengalir, dan panel pesanan tetap. Mobile memakai dua kolom produk, navigasi bawah, serta keranjang sebagai panel bawah. Tidak ada aksi yang hanya tersedia melalui hover. Semua halaman memakai heading, toolbar, dan ritme spasi yang sama.
 
+Autentikasi memakai komposisi dua kolom di desktop dan satu kolom di mobile. Navigasi mengikuti role: kasir hanya melihat Kasir dan Transaksi; manager juga melihat Produk dan Laporan; owner mendapatkan Pengaturan untuk outlet dan karyawan. Pemilih outlet tersedia di sidebar desktop dan bar workspace mobile. Halaman administrasi memakai daftar berbaris dengan formulir dalam dialog, bukan kartu bersarang.
+
 ## Elevation & Depth
 
 Permukaan umumnya datar. Bayangan hanya untuk elemen yang benar-benar melayang di atas pekerjaan, seperti dialog. Navigasi bawah memakai permukaan solid agar tetap jelas di atas konten.
