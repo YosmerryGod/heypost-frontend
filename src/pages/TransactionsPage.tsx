@@ -33,8 +33,9 @@ export default function TransactionsPage() {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDate, setExpenseDate] = useState(today);
   const [expensePaymentMethod, setExpensePaymentMethod] = useState<PaymentMethod>("Tunai");
-  const isManager = session?.principal.role === "owner" || session?.principal.role === "manager";
-  const { data: expenseData, isLoading: expensesLoading, error: expensesError, refetch: refetchExpenses } = trpc.expenses.list.useQuery({ fromDate: today(), toDate: today() }, { enabled: !!isManager });
+  const canViewExpenses = session?.principal.role === "owner" || session?.principal.permissions.includes("expenses.daily.view") === true;
+  const canCreateExpenses = session?.principal.role === "owner" || session?.principal.permissions.includes("expenses.daily.create") === true;
+  const { data: expenseData, isLoading: expensesLoading, error: expensesError, refetch: refetchExpenses } = trpc.expenses.list.useQuery({ fromDate: today(), toDate: today() }, { enabled: !!canViewExpenses });
   const utils = trpc.useUtils();
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: async () => {
@@ -55,13 +56,13 @@ export default function TransactionsPage() {
   const todayRows = rows.filter((row) => new Date(row.createdAt).toDateString() === todayString);
   const expenses = useMemo(() => (expenseData ?? []) as ExpenseRow[], [expenseData]);
   const salesToday = todayRows.reduce((sum, row) => sum + row.total, 0);
-  const expensesToday = expenses.reduce((sum, row) => sum + row.amount, 0);
+  const expensesToday = canViewExpenses ? expenses.reduce((sum, row) => sum + row.amount, 0) : 0;
   const remainingToday = salesToday - expensesToday;
   const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
   const filteredRows = query ? todayRows.filter((row) => row.invoiceNumber.toLocaleLowerCase("id-ID").includes(query)) : todayRows;
   const ledger = [
     ...filteredRows.map((row) => ({ kind: "sale" as const, id: `sale-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row })),
-    ...(query ? [] : expenses.map((row) => ({ kind: "expense" as const, id: `expense-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }))),
+    ...(query || !canViewExpenses ? [] : expenses.map((row) => ({ kind: "expense" as const, id: `expense-${row.id}`, timestamp: new Date(row.createdAt).getTime(), row }))),
   ].sort((a, b) => b.timestamp - a.timestamp);
   const exportData = () => {
     if (!rows.length) { toast.error("Tidak ada transaksi untuk diekspor"); return; }
@@ -86,18 +87,18 @@ export default function TransactionsPage() {
 
   return <div className="page-container">
     <header className="page-heading transactions-page-heading"><div><h1>Riwayat Harian</h1></div></header>
-    <div className={`transaction-stats ${isManager ? "has-expense-stats" : ""}`}><div><span>Penjualan hari ini</span><strong>{rupiah(salesToday)}</strong></div>{isManager && <><div className="expense-stat"><span>Pengeluaran hari ini</span><strong>{rupiah(expensesToday)}</strong></div><div className={`balance-stat ${remainingToday < 0 ? "negative" : ""}`}><span>Sisa hari ini</span><strong>{rupiah(remainingToday)}</strong></div></>}</div>
+    <div className={`transaction-stats ${canViewExpenses ? "has-expense-stats" : ""}`}><div><span>Penjualan hari ini</span><strong>{rupiah(salesToday)}</strong></div>{canViewExpenses && <><div className="expense-stat"><span>Pengeluaran hari ini</span><strong>{rupiah(expensesToday)}</strong></div><div className={`balance-stat ${remainingToday < 0 ? "negative" : ""}`}><span>Sisa hari ini</span><strong>{rupiah(remainingToday)}</strong></div></>}</div>
 
     <section className="transactions-list-section" aria-labelledby="transactions-list-title">
       <div className="transactions-list-heading">
         <h2 id="transactions-list-title">Transaksi hari ini</h2>
         <div className="transactions-list-actions">
-          {isManager && <button className="button primary" type="button" onClick={() => setIsExpenseDialogOpen(true)}><Plus size={18} /> Pengeluaran</button>}
+          {canCreateExpenses && <button className="button primary" type="button" onClick={() => setIsExpenseDialogOpen(true)}><Plus size={18} /> Pengeluaran</button>}
           <button className="button secondary" type="button" onClick={exportData} disabled={!rows.length}><Download size={18} /> Ekspor CSV</button>
         </div>
       </div>
       <div className="list-toolbar"><span>{ledger.length} aktivitas</span></div>
-      {isLoading || (isManager && expensesLoading) ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : expensesError ? <ErrorState message={expensesError.message} retry={() => refetchExpenses()} /> : ledger.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{mobileSearchQuery.trim() ? "Invoice tidak ditemukan" : "Belum ada aktivitas hari ini"}</h2><p>{mobileSearchQuery.trim() ? "Coba nomor invoice yang lain." : "Penjualan dan pengeluaran hari ini akan muncul di sini."}</p></div> : <div className="daily-ledger">{ledger.map((entry) => entry.kind === "sale" ? <button type="button" className="daily-ledger-row sale-row" key={entry.id} onClick={() => setSelected(entry.row)}><span className="ledger-kind">Penjualan</span><span className="ledger-main"><strong>{entry.row.invoiceNumber}</strong><small>{entry.row.customerName || entry.row.orderType} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>+{rupiah(entry.row.total)}</strong><small>{entry.row.items.reduce((sum, item) => sum + item.quantity, 0)} item</small></span><ChevronRight size={18} /></button> : <div className="daily-ledger-row expense-row" key={entry.id}><span className="ledger-kind">Pengeluaran</span><span className="ledger-main"><strong>{entry.row.category}</strong><small>{entry.row.description || entry.row.paymentMethod} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>−{rupiah(entry.row.amount)}</strong><small>{entry.row.paymentMethod}</small></span></div>)}</div>}
+      {isLoading || (canViewExpenses && expensesLoading) ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : canViewExpenses && expensesError ? <ErrorState message={expensesError.message} retry={() => refetchExpenses()} /> : ledger.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{mobileSearchQuery.trim() ? "Invoice tidak ditemukan" : "Belum ada aktivitas hari ini"}</h2><p>{mobileSearchQuery.trim() ? "Coba nomor invoice yang lain." : "Penjualan dan pengeluaran hari ini akan muncul di sini."}</p></div> : <div className="daily-ledger">{ledger.map((entry) => entry.kind === "sale" ? <button type="button" className="daily-ledger-row sale-row" key={entry.id} onClick={() => setSelected(entry.row)}><span className="ledger-kind">Penjualan</span><span className="ledger-main"><strong>{entry.row.invoiceNumber}</strong><small>{entry.row.customerName || entry.row.orderType} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>+{rupiah(entry.row.total)}</strong><small>{entry.row.items.reduce((sum, item) => sum + item.quantity, 0)} item</small></span><ChevronRight size={18} /></button> : <div className="daily-ledger-row expense-row" key={entry.id}><span className="ledger-kind">Pengeluaran</span><span className="ledger-main"><strong>{entry.row.category}</strong><small>{entry.row.description || entry.row.paymentMethod} · {formatDate(entry.row.createdAt)}</small></span><span className="ledger-amount"><strong>−{rupiah(entry.row.amount)}</strong><small>{entry.row.paymentMethod}</small></span></div>)}</div>}
     </section>
 
     <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
