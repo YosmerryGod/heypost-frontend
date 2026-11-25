@@ -55,7 +55,7 @@ const summary = z.object({
 const expense = z.object({ // [ADDED]
   id: z.number(), storeId: z.number(), outletId: z.number(), userId: z.number().nullable(),
   employeeId: z.number().nullable(), category: z.string(), description: z.string().nullable(),
-  amount: z.number(), paymentMethod, expenseDate: z.string(), createdAt: z.date(),
+  amount: z.number(), paymentMethod, expenseDate: z.string(), status: z.enum(["Aktif", "Dibatalkan"]), createdAt: z.date(),
 });
 
 export const appRouter = t.router({
@@ -130,6 +130,9 @@ export const appRouter = t.router({
       category: z.string(), description: z.string().optional(), amount: z.number(),
       paymentMethod, expenseDate: z.string(),
     })).output(expense).mutation(typeOnly),
+    cancel: procedure.input(z.object({ id: z.number().int().positive() })).output(z.object({
+      ok: z.boolean(), status: z.enum(["Aktif", "Dibatalkan"]),
+    })).mutation(typeOnly),
   }),
 });
 
