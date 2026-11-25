@@ -39,3 +39,15 @@
   .expense-form-actions { flex-direction: column-reverse; }
   .expense-form-actions .button { width: 100%; }
 }
+
+.expense-table .expense-action-cell { width: 72px; text-align: center; white-space: nowrap; }
+.expense-cancelled-row td { color: var(--ink-500); background: var(--surface-050); }
+.expense-cancelled-row td strong { color: var(--ink-500); }
+.expense-cancelled-row .expense-category { opacity: .7; }
+.expense-status { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.expense-status.is-active { background: var(--surface-050); color: var(--ink-700); }
+.expense-status.is-cancelled { background: color-mix(in oklch, var(--red-600) 10%, transparent); color: var(--red-700); }
+.expense-cancel-button { display: inline-grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-000); color: var(--red-700); cursor: pointer; }
+.expense-cancel-button:hover:not(:disabled) { background: color-mix(in oklch, var(--red-600) 9%, var(--surface-000)); border-color: var(--red-600); }
+.expense-cancel-button:disabled { cursor: not-allowed; opacity: .5; }
+.expense-no-action { color: var(--ink-500); }
