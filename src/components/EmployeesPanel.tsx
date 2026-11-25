@@ -75,7 +75,7 @@ export default function EmployeesPanel() {
   const pending = create.isPending || update.isPending;
 
   return <section className="settings-section" aria-labelledby="employee-list-title">
-    <div className="settings-section-head"><div><h2 id="employee-list-title">Karyawan</h2></div><span>{filtered.length} karyawan</span></div>
+    <div className="settings-section-head"><span>{filtered.length} karyawan</span></div>
     {isLoading ? <Loading label="Memuat daftar karyawan…" /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filtered.length === 0 ? <div className="state-panel employee-empty"><UserRound size={30} /><h3>{data?.length ? "Karyawan tidak ditemukan" : "Belum ada karyawan"}</h3><p>{data?.length ? "Coba kata kunci pencarian lain." : "Tambahkan manager atau kasir, lalu berikan kartu aksesnya."}</p>{!data?.length && <button className="button primary" onClick={openCreate}>Tambah karyawan pertama</button>}</div> : <div className="settings-list employee-list">
       {filtered.map((employee) => {
         const locked = employee.lockedUntil && employee.lockedUntil.getTime() > now;
