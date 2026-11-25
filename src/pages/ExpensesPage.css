@@ -51,3 +51,14 @@
 .expense-cancel-button:hover:not(:disabled) { background: color-mix(in oklch, var(--red) 9%, var(--surface-000)); border-color: var(--red); }
 .expense-cancel-button:disabled { cursor: not-allowed; opacity: .5; }
 .expense-no-action { color: var(--ink-500); }
+
+/* [ADDED] Indikator visual bahwa seluruh baris pengeluaran dapat dibuka. */
+.expense-table tbody tr.expense-clickable-row { cursor: pointer; }
+.expense-table tbody tr.expense-clickable-row:hover td { background: var(--surface-050); }
+.expense-table tbody tr.expense-clickable-row:focus-visible { outline: 3px solid color-mix(in oklch, var(--blue-600) 35%, transparent); outline-offset: -3px; }
+.expense-detail-content { display: grid; gap: 0; margin: 16px 0; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.expense-detail-content > div { display: flex; justify-content: space-between; gap: 16px; padding: 13px 14px; border-bottom: 1px solid var(--line); }
+.expense-detail-content > div:last-child { border-bottom: 0; }
+.expense-detail-content span { color: var(--ink-600); font-size: 13px; }
+.expense-detail-content strong { color: var(--ink-900); font-size: 13px; text-align: right; overflow-wrap: anywhere; }
+.expense-detail-cancelled { padding: 11px 12px; border-radius: 8px; background: var(--surface-050); color: var(--ink-600); font-size: 13px; }
