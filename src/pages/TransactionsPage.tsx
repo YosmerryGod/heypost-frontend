@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useOutletContext } from "react-router";
 import { ChevronRight, Download, Plus, ReceiptText } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -21,6 +22,7 @@ const today = () => {
 };
 
 export default function TransactionsPage() {
+  const { mobileSearchQuery } = useOutletContext<{ mobileSearchQuery: string }>();
   const { data, isLoading, error, refetch } = trpc.pos.transactions.useQuery();
   const { data: session } = useAuth();
   const [selected, setSelected] = useState<TransactionRow | null>(null);
@@ -45,6 +47,10 @@ export default function TransactionsPage() {
     onError: (mutationError) => toast.error(mutationError.message),
   });
   const rows = useMemo(() => (data ?? []) as TransactionRow[], [data]);
+  const filteredRows = useMemo(() => {
+    const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
+    return query ? rows.filter((row) => row.invoiceNumber.toLocaleLowerCase("id-ID").includes(query)) : rows;
+  }, [rows, mobileSearchQuery]);
   const todayString = new Date().toDateString();
   const todayRows = rows.filter((row) => new Date(row.createdAt).toDateString() === todayString);
   const isManager = session?.principal.role === "owner" || session?.principal.role === "manager";
@@ -81,8 +87,8 @@ export default function TransactionsPage() {
           <button className="button secondary" type="button" onClick={exportData} disabled={!rows.length}><Download size={18} /> Ekspor CSV</button>
         </div>
       </div>
-      <div className="list-toolbar"><span>{rows.length} transaksi</span></div>
-      {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : rows.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>Belum ada transaksi</h2><p>Transaksi yang selesai akan muncul di sini.</p></div> : <div className="transaction-table-wrap"><table className="transaction-table"><thead><tr><th>Invoice</th><th>Pelanggan</th><th>Pembayaran</th><th>Total</th><th><span className="sr-only">Detail</span></th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} onClick={() => setSelected(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(row); } }}><td><strong>{row.invoiceNumber}</strong><span>{formatDate(row.createdAt)}</span></td><td><strong>{row.customerName}</strong><span>{row.orderType}</span></td><td><span className="payment-badge">{row.paymentMethod}</span></td><td><strong>{rupiah(row.total)}</strong><span>{row.items.reduce((sum, item) => sum + item.quantity, 0)} item</span></td><td><button className="icon-button" onClick={(event) => { event.stopPropagation(); setSelected(row); }} aria-label={`Detail ${row.invoiceNumber}`}><ChevronRight size={19} /></button></td></tr>)}</tbody></table></div>}
+      <div className="list-toolbar"><span>{filteredRows.length} transaksi</span></div>
+      {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : filteredRows.length === 0 ? <div className="state-panel"><ReceiptText size={30} /><h2>{rows.length === 0 ? "Belum ada transaksi" : "Invoice tidak ditemukan"}</h2><p>{rows.length === 0 ? "Transaksi yang selesai akan muncul di sini." : "Coba kata kunci invoice yang lain."}</p></div> : <div className="transaction-table-wrap"><table className="transaction-table"><thead><tr><th>Invoice</th><th>Pelanggan</th><th>Pembayaran</th><th>Total</th><th><span className="sr-only">Detail</span></th></tr></thead><tbody>{filteredRows.map((row) => <tr key={row.id} onClick={() => setSelected(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(row); } }}><td><strong>{row.invoiceNumber}</strong><span>{formatDate(row.createdAt)}</span></td><td><strong>{row.customerName}</strong><span>{row.orderType}</span></td><td><span className="payment-badge">{row.paymentMethod}</span></td><td><strong>{rupiah(row.total)}</strong><span>{row.items.reduce((sum, item) => sum + item.quantity, 0)} item</span></td><td><button className="icon-button" onClick={(event) => { event.stopPropagation(); setSelected(row); }} aria-label={`Detail ${row.invoiceNumber}`}><ChevronRight size={19} /></button></td></tr>)}</tbody></table></div>}
     </section>
 
     <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
