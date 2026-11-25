@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import AppLayout from "@/components/AppLayout";
-import { AuthGate, PermissionGate } from "@/components/AuthGate";
+import { AuthGate, PermissionGate, RoleGate } from "@/components/AuthGate"; // [MODIFIED]
 import { Loading } from "@/components/Loading";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
