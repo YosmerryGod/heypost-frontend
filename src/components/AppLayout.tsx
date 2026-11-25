@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"; // [MODIFIED]
 import { useQueryClient } from "@tanstack/react-query";
-import { ChartNoAxesColumnIncreasing, LogOut, Package, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound } from "lucide-react"; // [MODIFIED]
+import { ChartNoAxesColumnIncreasing, LogOut, Package, ReceiptText, Search, Settings2, ShoppingBag, Store, UserRound, Wallet } from "lucide-react"; // [MODIFIED]
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -12,6 +12,7 @@ const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: 
   { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"] },
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager"] },
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"] },
+  { to: "/pengeluaran", label: "Pengeluaran", icon: Wallet, roles: ["owner", "manager"] }, // [ADDED]
   { to: "/pengaturan", label: "Pengaturan", icon: Settings2, roles: ["owner"] },
 ];
 
@@ -42,6 +43,7 @@ export default function AppLayout() {
       utils.auth.me.setData(undefined, (current) => current ? { ...current, activeOutletId } : current);
       const outlet = session?.outlets.find((item) => item.id === variables.outletId);
       void utils.pos.invalidate();
+      void utils.expenses.invalidate(); // [ADDED]
       toast.success(`Berpindah ke ${outlet?.name ?? "outlet"}`);
     },
     onError: (error) => toast.error(error.message),

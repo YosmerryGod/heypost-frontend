@@ -1,0 +1,41 @@
+.expenses-page { max-width: 1240px; }
+.expense-summary { display: flex; align-items: center; gap: 16px; margin: 24px 0 28px; padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-000); }
+.expense-summary-icon { width: 46px; height: 46px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 10px; background: var(--blue-050); color: var(--blue-700); }
+.expense-summary > div:last-child { display: grid; gap: 4px; }
+.expense-summary span, .expense-summary small { color: var(--ink-600); font-size: 12px; }
+.expense-summary strong { color: var(--ink-900); font-family: "Archivo Variable", sans-serif; font-size: clamp(23px, 3vw, 30px); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.expense-list-section { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-000); }
+.expense-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px; border-bottom: 1px solid var(--line); }
+.expense-toolbar h2 { font-family: "Archivo Variable", sans-serif; font-size: 18px; letter-spacing: -.025em; }
+.expense-toolbar p { margin-top: 4px; color: var(--ink-600); font-size: 12px; }
+.expense-date-range { display: flex; gap: 10px; }
+.expense-date-range label { display: grid; gap: 5px; color: var(--ink-600); font-size: 11px; font-weight: 650; }
+.expense-date-range input { min-height: 42px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-000); color: var(--ink-900); font: inherit; font-size: 12px; }
+.expense-table-wrap { width: 100%; overflow-x: auto; }
+.expense-table { width: 100%; border-collapse: collapse; text-align: left; }
+.expense-table th { padding: 13px 16px; background: var(--surface-050); color: var(--ink-600); font-size: 11px; font-weight: 700; white-space: nowrap; }
+.expense-table td { padding: 15px 16px; border-top: 1px solid var(--line); color: var(--ink-600); font-size: 13px; }
+.expense-table td strong { color: var(--ink-900); }
+.expense-table .amount-cell { text-align: right; white-space: nowrap; }
+.expense-category { display: inline-flex; padding: 4px 8px; border-radius: 5px; background: var(--surface-050); color: var(--ink-700); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.expense-empty { min-height: 270px; border: 0; border-radius: 0; }
+.expense-empty .button { margin-top: 8px; }
+.expense-dialog { max-height: 92dvh; overflow-y: auto; border-radius: 14px !important; padding: 26px !important; background: var(--surface-000) !important; }
+.expense-dialog [data-slot="dialog-title"] { font-family: "Archivo Variable", sans-serif; font-size: 23px; letter-spacing: -.03em; }
+.expense-form { margin-top: 18px; }
+.expense-form label { display: grid; gap: 7px; color: var(--ink-900); font-size: 13px; font-weight: 650; }
+.expense-form input, .expense-form select { width: 100%; min-height: 46px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-000); color: var(--ink-900); font: inherit; font-size: 14px; }
+.expense-form input:focus-visible, .expense-form select:focus-visible { outline: 3px solid color-mix(in oklch, var(--blue-600) 25%, transparent); outline-offset: 1px; }
+.expense-description { grid-column: 1 / -1; }
+.expense-description textarea { min-height: 86px; }
+.expense-form-actions { display: flex; justify-content: flex-end; gap: 8px; grid-column: 1 / -1; margin-top: 8px; }
+.expense-form-actions .button { min-height: 46px; }
+@media (max-width: 768px) {
+  .expense-toolbar { align-items: stretch; flex-direction: column; }
+  .expense-date-range { display: grid; grid-template-columns: 1fr 1fr; }
+  .expense-date-range input { width: 100%; }
+  .expense-table { min-width: 650px; }
+  .expense-dialog { width: calc(100% - 24px) !important; max-width: 500px !important; padding: 22px !important; }
+  .expense-form-actions { flex-direction: column-reverse; }
+  .expense-form-actions .button { width: 100%; }
+}

@@ -51,6 +51,11 @@ const summary = z.object({
   topProducts: z.array(z.object({ name: z.string(), quantity: z.number(), revenue: z.number() })),
   payments: z.array(z.object({ method: z.string(), total: z.number() })),
 });
+const expense = z.object({ // [ADDED]
+  id: z.number(), storeId: z.number(), outletId: z.number(), userId: z.number().nullable(),
+  employeeId: z.number().nullable(), category: z.string(), description: z.string().nullable(),
+  amount: z.number(), paymentMethod, expenseDate: z.string(), createdAt: z.date(),
+});
 
 export const appRouter = t.router({
   auth: t.router({
@@ -91,7 +96,8 @@ export const appRouter = t.router({
       products: z.array(product), categories: z.array(category), outlet, role,
     })).query(typeOnly),
     createCategory: procedure.input(z.object({ name: z.string(), sortOrder: z.number().default(0) })).output(category).mutation(typeOnly),
-    uploadProductImage: procedure.input(z.object({ dataUrl: z.string() })).output(z.object({ imageUrl: z.string() })).mutation(typeOnly),\n    createProduct: procedure.input(productInput).output(product).mutation(typeOnly),
+    uploadProductImage: procedure.input(z.object({ dataUrl: z.string() })).output(z.object({ imageUrl: z.string() })).mutation(typeOnly),
+    createProduct: procedure.input(productInput).output(product).mutation(typeOnly),
     updateProduct: procedure.input(productInput.extend({ id: z.number() })).output(product).mutation(typeOnly),
     archiveProduct: procedure.input(z.object({ id: z.number() })).output(z.object({ ok: z.boolean() })).mutation(typeOnly),
     createTransaction: procedure.input(z.object({
@@ -103,6 +109,15 @@ export const appRouter = t.router({
     summary: procedure.input(z.object({
       range: z.enum(["today", "week", "month", "all"]).default("week"), allOutlets: z.boolean().default(false),
     })).output(summary).query(typeOnly),
+  }),
+  expenses: t.router({ // [ADDED]
+    list: procedure.input(z.object({
+      fromDate: z.string().optional(), toDate: z.string().optional(),
+    }).optional()).output(z.array(expense)).query(typeOnly),
+    create: procedure.input(z.object({
+      category: z.string(), description: z.string().optional(), amount: z.number(),
+      paymentMethod, expenseDate: z.string(),
+    })).output(expense).mutation(typeOnly),
   }),
 });
 
