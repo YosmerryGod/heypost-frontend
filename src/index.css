@@ -383,3 +383,107 @@ h1 { font-family: "Archivo Variable", sans-serif; font-size: clamp(1.65rem, 2.4v
   .receipt-paper { position: fixed; inset: 0; width: 100%; border: 0; background: white; }
   .receipt-actions, .detail-dialog button, [data-slot="dialog-close"] { display: none !important; }
 }
+
+
+/* [MODIFIED] heypost visual refresh: pine-green operational palette */
+:root {
+  --blue-600: oklch(0.49 0.12 160);
+  --blue-700: oklch(0.41 0.11 160);
+  --blue-050: oklch(0.96 0.025 160);
+  --ink-900: oklch(0.22 0.025 160);
+  --ink-600: oklch(0.47 0.025 160);
+  --ink-400: oklch(0.59 0.02 160);
+  --surface-000: oklch(0.997 0.003 150);
+  --surface-050: oklch(0.972 0.009 150);
+  --line: oklch(0.90 0.015 155);
+  --green: oklch(0.52 0.13 155);
+  --background: 145 20% 97%;
+  --foreground: 158 25% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 158 25% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 158 25% 16%;
+  --primary: 158 66% 28%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 145 18% 94%;
+  --secondary-foreground: 158 25% 16%;
+  --muted: 145 18% 94%;
+  --muted-foreground: 153 10% 43%;
+  --accent: 145 35% 94%;
+  --accent-foreground: 158 66% 28%;
+  --border: 145 14% 88%;
+  --input: 145 14% 88%;
+  --ring: 158 66% 28%;
+  color-scheme: light;
+}
+
+html, body { background: var(--surface-050); }
+body { color: var(--ink-900); }
+.side-nav {
+  background: #fff;
+  border-right-color: var(--line);
+}
+.wordmark { color: var(--ink-900); }
+.wordmark span { color: var(--blue-600); }
+.wordmark b { color: var(--blue-600); }
+.store-switch {
+  border-color: var(--line);
+  background: var(--surface-050);
+}
+.store-switch > svg { color: var(--blue-600); }
+.desktop-menu a.active {
+  background: var(--blue-050);
+  color: var(--blue-700);
+}
+.desktop-menu a.active::before { background: var(--blue-600); }
+.sidebar-foot { border-top-color: var(--line); }
+.sidebar-foot-mark {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--blue-600);
+}
+.button.primary, .checkout-button, .pay-button {
+  background: var(--blue-600);
+  border-color: var(--blue-600);
+}
+.button.primary:hover:not(:disabled), .checkout-button:hover:not(:disabled), .pay-button:hover:not(:disabled) {
+  background: var(--blue-700);
+  border-color: var(--blue-700);
+}
+.mobile-cart-bar {
+  background: var(--blue-600);
+  box-shadow: 0 8px 28px color-mix(in oklch, var(--blue-600) 20%, transparent);
+}
+.metric-grid .metric-primary {
+  background: var(--blue-600);
+  border-color: var(--blue-600);
+}
+.range-tabs button.active { background: var(--blue-600); }
+.transaction-table tbody tr:hover { background: var(--blue-050); }
+.payment-badge {
+  background: var(--blue-050);
+  color: var(--blue-700);
+}
+.search-field:focus-within, .customer-field:focus-within {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--blue-600) 12%, transparent);
+}
+@media (max-width: 768px) {
+  .bottom-nav {
+    background: rgba(255,255,255,.97);
+    border-top-color: var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .bottom-nav a.active { color: var(--blue-700); }
+  .bottom-nav a.active::before { background: var(--blue-600); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .product-card, .button, .icon-button, .bottom-nav a, .desktop-menu a {
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  }
+  .product-card:active, .button:active:not(:disabled), .icon-button:active:not(:disabled) {
+    transform: scale(.985);
+  }
+}
