@@ -109,6 +109,14 @@ export const appRouter = t.router({
       discount: z.number().default(0), cashReceived: z.number().optional(),
       items: z.array(z.object({ productId: z.number(), quantity: z.number() })),
     })).output(transaction.extend({ items: z.array(saleItem) })).mutation(typeOnly),
+    updateTransaction: procedure.input(z.object({
+      id: z.number(), customerName: z.string().optional(), orderType, paymentMethod,
+      discount: z.number(), cashReceived: z.number().optional(),
+      items: z.array(z.object({ productId: z.number(), quantity: z.number() })),
+    })).output(transaction.extend({ items: z.array(transactionItem) })).mutation(typeOnly),
+    cancelTransaction: procedure.input(z.object({ id: z.number() })).output(z.object({
+      ok: z.boolean(), status: z.enum(["Selesai", "Dibatalkan"]),
+    })).mutation(typeOnly),
     transactions: procedure.output(z.array(transaction.extend({ items: z.array(transactionItem) }))).query(typeOnly),
     summary: procedure.input(z.object({
       range: z.enum(["today", "week", "month", "all"]).default("week"), allOutlets: z.boolean().default(false),
