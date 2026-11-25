@@ -810,3 +810,15 @@ body { color: var(--ink-900); }
   .mobile-store-name-form label { color: var(--ink-900); font-size: 13px; font-weight: 680; }
   .mobile-store-name-form input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-000); color: var(--ink-900); }
 }
+
+/* [ADDED] Contextual admin navigation on mobile. */
+@media (max-width: 768px) {
+  .mobile-admin-brand { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .mobile-back-trigger { width: 38px !important; height: 42px !important; }
+  .admin-workspace-bar { justify-content: space-between; gap: 5px; }
+  .admin-workspace-bar .mobile-header-actions { gap: 0; }
+  .admin-workspace-bar .mobile-header-actions > .icon-button { width: 40px; height: 42px; }
+  .mobile-admin-add { border-radius: 9px; background: var(--blue-600); color: white; }
+  .mobile-admin-add:hover { background: var(--blue-700); color: white; }
+  .admin-bottom-nav-hidden { display: none !important; }
+}
