@@ -113,8 +113,9 @@
 .cashier-product-image { position: relative; aspect-ratio: 1.12; overflow: hidden; border-radius: 8px; background: color-mix(in oklch, var(--cashier-border) 55%, var(--surface-000)); }
 .cashier-product-image > img { width: 100%; height: 100%; object-fit: cover; transition: transform 180ms ease-out, opacity 160ms ease-out; }
 .cashier-product:hover:not(:disabled) .cashier-product-image > img { transform: scale(1.025); }
-.cashier-image-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; background: var(--cashier-accent-soft); color: var(--cashier-accent); }
-.cashier-image-fallback > span { font-family: "Archivo Variable", sans-serif; font-size: 25px; font-weight: 700; }
+/* [MODIFIED] Center a single product initial instead of an icon plus letter. */
+.cashier-image-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--cashier-accent-soft); color: var(--cashier-accent); }
+.cashier-image-fallback > span { font-family: "Archivo Variable", sans-serif; font-size: 34px; font-weight: 760; }
 .cashier-add-product {
   position: absolute;
   right: 7px;
