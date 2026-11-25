@@ -1,18 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Archive, ImagePlus, Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useOutletContext } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ErrorState, Loading } from "@/components/Loading";
 import { rupiah } from "@/lib/format";
-import { useAuth } from "@/hooks/useAuth"; // [ADDED]
+import { useAuth } from "@/hooks/useAuth";
 
-// [MODIFIED] Keep imageUrl as an empty string when a product has no photo.
 type ProductForm = { id?: number; name: string; categoryId: number; price: number; stock: number; imageUrl: string | null };
+type ProductPageContext = { mobileSearchQuery: string };
 const emptyForm: ProductForm = { name: "", categoryId: 0, price: 0, stock: 0, imageUrl: null };
 
-// [ADDED] Show the first letter of the product name when no usable photo exists.
 function ProductThumbnail({ src, name }: { src: string | null; name: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || failedSrc === src) {
@@ -22,35 +22,86 @@ function ProductThumbnail({ src, name }: { src: string | null; name: string }) {
 }
 
 export default function ProductsPage() {
-  const { data, isLoading, error, refetch } = trpc.pos.bootstrap.useQuery();
-  const { data: session } = useAuth(); // [ADDED]
-  const permissions = session?.principal.permissions ?? []; // [ADDED]
-  const isOwner = session?.principal.role === "owner"; // [ADDED]
-  const canCreateMenu = isOwner || permissions.includes("menu.create"); // [ADDED]
-  const canEditMenu = isOwner || permissions.includes("menu.edit"); // [ADDED]
-  const canEditStock = isOwner || permissions.includes("stock.edit"); // [ADDED]
-  const canEditProducts = canEditMenu || canEditStock; // [ADDED]
+  const { mobileSearchQuery } = useOutletContext<ProductPageContext>();
+  const { data, isLoading, error, refetch } = trpc.pos.listProducts.useQuery();
+  const { data: session } = useAuth();
+  const permissions = session?.principal.permissions ?? [];
+  const isOwner = session?.principal.role === "owner";
+  const canCreateMenu = isOwner || permissions.includes("menu.create");
+  const canEditMenu = isOwner || permissions.includes("menu.edit");
+  const canEditStock = isOwner || permissions.includes("stock.edit");
+  const canEditProducts = canEditMenu || canEditStock;
   const utils = trpc.useUtils();
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState(0);
   const [form, setForm] = useState<ProductForm | null>(null);
   const [categoryForm, setCategoryForm] = useState<string | null>(null);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const openAddMenu = () => setAddMenuOpen(true);
+    window.addEventListener("heypost:admin-add", openAddMenu);
+    return () => window.removeEventListener("heypost:admin-add", openAddMenu);
+  }, []);
+
   const createCategory = trpc.pos.createCategory.useMutation({
-    onSuccess: () => { setCategoryForm(null); toast.success("Kategori berhasil ditambahkan"); utils.pos.bootstrap.invalidate(); },
+    onSuccess: async () => {
+      setCategoryForm(null);
+      setAddMenuOpen(false);
+      await utils.pos.listProducts.invalidate();
+      toast.success("Kategori berhasil ditambahkan");
+    },
     onError: (mutationError) => toast.error(mutationError.message),
   });
-  const create = trpc.pos.createProduct.useMutation({ onSuccess: () => { toast.success("Produk berhasil ditambahkan"); closeAndRefresh(); } });
-  const update = trpc.pos.updateProduct.useMutation({ onSuccess: () => { toast.success("Perubahan produk disimpan"); closeAndRefresh(); } });
-  const archive = trpc.pos.archiveProduct.useMutation({ onSuccess: () => { toast.success("Produk diarsipkan"); closeAndRefresh(); } });
+  const create = trpc.pos.createProduct.useMutation({
+    onSuccess: async () => {
+      setForm(null);
+      setAddMenuOpen(false);
+      await Promise.all([utils.pos.listProducts.invalidate(), utils.pos.bootstrap.invalidate()]);
+      toast.success("Produk berhasil ditambahkan");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
+  const update = trpc.pos.updateProduct.useMutation({
+    onSuccess: async () => {
+      setForm(null);
+      await Promise.all([utils.pos.listProducts.invalidate(), utils.pos.bootstrap.invalidate()]);
+      toast.success("Perubahan produk disimpan");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
+  const archive = trpc.pos.archiveProduct.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.pos.listProducts.invalidate(), utils.pos.bootstrap.invalidate()]);
+      toast.success("Produk diarsipkan");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
+  const setActive = trpc.pos.setProductActive.useMutation({
+    onSuccess: async (_, variables) => {
+      await Promise.all([utils.pos.listProducts.invalidate(), utils.pos.bootstrap.invalidate()]);
+      toast.success(variables.active ? "Produk diaktifkan" : "Produk dinonaktifkan");
+    },
+    onError: (mutationError) => toast.error(mutationError.message),
+  });
   const uploadImage = trpc.pos.uploadProductImage.useMutation();
-  function closeAndRefresh() { setForm(null); utils.pos.bootstrap.invalidate(); }
+
   const products = useMemo(() => data?.products ?? [], [data]);
-  const filtered = useMemo(() => products.filter((product) => (category === 0 || product.categoryId === category) && `${product.name} ${product.sku}`.toLowerCase().includes(search.toLowerCase())), [products, category, search]);
+  const categories = useMemo(() => data?.categories ?? [], [data]);
+  const query = mobileSearchQuery.trim().toLocaleLowerCase("id-ID");
+  const filtered = useMemo(
+    () => products.filter((product) => !query || `${product.name} ${product.sku}`.toLocaleLowerCase("id-ID").includes(query)),
+    [products, query],
+  );
+  const groupedProducts = useMemo(
+    () => categories.map((item) => ({ ...item, products: filtered.filter((product) => product.categoryId === item.id) }))
+      .filter((item) => item.products.length > 0),
+    [categories, filtered],
+  );
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!form || !form.categoryId) { toast.error("Pilih kategori produk"); return; } // [MODIFIED]
+    if (!form || !form.categoryId) { toast.error("Pilih kategori produk"); return; }
     if (form.id) update.mutate({ ...form, id: form.id });
-    else if (canCreateMenu) create.mutate(form); // [MODIFIED]
+    else if (canCreateMenu) create.mutate(form);
   };
   const pending = create.isPending || update.isPending || uploadImage.isPending;
   // [MODIFIED] Normalize images to JPEG so Android gallery MIME metadata cannot mismatch the actual file format.
@@ -96,12 +147,84 @@ export default function ProductsPage() {
       toast.error(error instanceof Error ? error.message : "Foto tidak bisa diproses di perangkat.");
     }
   };
-  return <div className="page-container">
-    <header className="page-heading"><div><span className="section-kicker">INVENTORI</span><h1>Produk & stok</h1><p>Kelola menu, harga, dan ketersediaan dalam satu tempat.</p></div><div className="page-actions">{canCreateMenu && <><button className="button secondary" onClick={() => setCategoryForm("")}><Plus size={18} /> Kategori</button><button className="button primary" disabled={!data?.categories.length} title={!data?.categories.length ? "Buat kategori terlebih dahulu" : undefined} onClick={() => setForm({ ...emptyForm })}><Plus size={18} /> Tambah produk</button></>}</div> {/* [MODIFIED] */}</header>
-    <div className="inventory-strip"><Package size={21} /><div><strong>{products.length} produk aktif</strong><span>{products.filter((product) => product.stock <= 8).length} produk perlu perhatian stok</span></div><div className="inventory-total"><span>Total unit</span><strong>{products.reduce((sum, product) => sum + product.stock, 0)}</strong></div></div>
-    <div className="list-toolbar"><label className="search-field"><Search size={19} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama atau SKU…" aria-label="Cari produk" /></label><select value={category} onChange={(event) => setCategory(Number(event.target.value))} aria-label="Filter kategori"><option value={0}>Semua kategori</option>{data?.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
-    {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : <div className="inventory-list"><div className="inventory-head"><span>Produk</span><span>Kategori</span><span>Stok</span><span>Harga</span>{canEditProducts && <span>Aksi</span>} {/* [MODIFIED] */}</div>{filtered.map((product) => <div className="inventory-row" key={product.id}><div className="inventory-product"><ProductThumbnail src={product.imageUrl} name={product.name} /><div><strong>{product.name}</strong><span>{product.sku}</span></div></div><span>{data?.categories.find((item) => item.id === product.categoryId)?.name}</span><span className={product.stock <= 8 ? "low-stock" : "stock-good"}><i />{product.stock} unit</span><strong>{rupiah(product.price)}</strong>{canEditProducts && <div className="row-actions">{(canEditMenu || canEditStock) && <button className="icon-button" onClick={() => setForm({ id: product.id, name: product.name, categoryId: product.categoryId, price: product.price, stock: product.stock, imageUrl: product.imageUrl })} aria-label={`${canEditMenu ? "Edit" : "Ubah stok"} ${product.name}`}><Pencil size={17} /></button>}{canEditMenu && <button className="icon-button danger" disabled={archive.isPending} onClick={() => { if (window.confirm(`Arsipkan ${product.name}? Produk tidak akan tampil di kasir.`)) archive.mutate({ id: product.id }); }} aria-label={`Arsipkan ${product.name}`}><Archive size={17} /></button>}</div>} {/* [MODIFIED] */}</div>)}{filtered.length === 0 && <div className="inline-empty">Tidak ada produk yang cocok dengan pencarian atau filter ini.</div>}</div>}
-    <Dialog open={categoryForm !== null} onOpenChange={(open) => { if (!open && !createCategory.isPending) setCategoryForm(null); }}><DialogContent className="settings-dialog"><form onSubmit={(event) => { event.preventDefault(); if (categoryForm?.trim()) createCategory.mutate({ name: categoryForm.trim(), sortOrder: data?.categories.length ?? 0 }); }}><DialogTitle>Tambah kategori</DialogTitle><DialogDescription>Kategori hanya dibuat untuk outlet yang sedang dibuka.</DialogDescription><div className="form-grid"><label className="full">Nama kategori<input autoFocus required minLength={2} maxLength={100} value={categoryForm ?? ""} onChange={(event) => setCategoryForm(event.target.value)} placeholder="Contoh: Minuman dingin" /></label></div><div className="dialog-actions"><button type="button" className="button secondary" onClick={() => setCategoryForm(null)}>Batal</button><button type="submit" className="button primary" disabled={createCategory.isPending || !categoryForm?.trim()}>{createCategory.isPending ? "Menyimpan…" : "Simpan kategori"}</button></div></form></DialogContent></Dialog>
-    <Dialog open={!!form} onOpenChange={(open) => { if (!open && !pending) setForm(null); }}><DialogContent className="product-dialog">{form && <form onSubmit={submit}><DialogTitle>{form.id ? "Edit produk" : "Tambah produk"}</DialogTitle><DialogDescription>Lengkapi informasi yang tampil di katalog kasir.</DialogDescription><div className="form-grid"><label className="full">Nama produk<input required minLength={2} disabled={!!form.id && !canEditMenu} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Masukkan nama produk" /></label><label>Kategori<select required disabled={!!form.id && !canEditMenu} value={form.categoryId} onChange={(event) => setForm({ ...form, categoryId: Number(event.target.value) })}><option value={0} disabled>Pilih kategori</option>{data?.categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Stok (unit)<input disabled={!!form.id && !canEditStock} type="text" inputMode="numeric" pattern="[0-9]*" value={form.stock || ""} onChange={(event) => { const value = event.target.value.replace(/\\D/g, "").replace(/^0+(?=\\d)/, ""); setForm({ ...form, stock: value === "" ? 0 : Number(value) }); }} placeholder="0" /></label><label className="full">Harga jual (Rp)<input disabled={!!form.id && !canEditMenu} required type="number" min="100" step="100" value={form.price || ""} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} placeholder="25000" /></label>{(!form.id || canEditMenu) && <div className="full product-photo-field"><span className="product-photo-label">Foto produk (opsional)</span><div className="product-photo-preview">{form.imageUrl ? <img src={form.imageUrl} alt="Pratinjau foto produk" /> : <span>{form.name.trim().slice(0, 1).toUpperCase() || "?"}</span>}</div><div className="product-photo-actions"><label className="button secondary"><ImagePlus size={17} />{uploadImage.isPending ? "Mengunggah…" : "Pilih foto"}<input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={pending} onChange={(event) => { selectProductImage(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>{form.imageUrl && <button type="button" className="button secondary" disabled={pending} onClick={() => setForm({ ...form, imageUrl: null })}><Trash2 size={16} /> Hapus foto</button>}</div><small>Pilih dari galeri atau kamera. Format JPG, PNG, WebP, maksimal 5 MB. Jika kosong, huruf awal nama produk akan ditampilkan.</small></div>}</div><div className="dialog-actions"><button type="button" className="button secondary" onClick={() => setForm(null)}>Batal</button><button type="submit" className="button primary" disabled={pending || (!!form.id && !canEditMenu && !canEditStock)}>{pending ? "Menyimpan…" : "Simpan produk"}</button> {/* [MODIFIED] */}</div></form>}</DialogContent></Dialog>
+  return <div className="page-container products-page">
+    <header className="products-page-heading">
+      <div>
+        <h1>Menu</h1>
+        <p>{products.length} produk · {categories.length} kategori</p>
+      </div>
+    </header>
+
+    <div className="products-summary">
+      <div><strong>{products.filter((product) => product.active).length}</strong><span>Aktif</span></div>
+      <div><strong>{products.filter((product) => !product.active).length}</strong><span>Nonaktif</span></div>
+      <div><strong>{products.reduce((sum, product) => sum + product.stock, 0)}</strong><span>Total stok</span></div>
+    </div>
+
+    {isLoading ? <Loading /> : error ? <ErrorState message={error.message} retry={() => refetch()} /> : groupedProducts.length === 0 ? (
+      <div className="products-empty"><Package size={28} /><strong>{query ? "Menu tidak ditemukan" : "Belum ada menu"}</strong><span>{query ? "Coba kata pencarian lain." : "Tambahkan menu untuk mulai mengelola katalog."}</span></div>
+    ) : (
+      <div className="products-groups">
+        {groupedProducts.map((group) => <section className="products-category" key={group.id}>
+          <div className="products-category-heading"><h2>{group.name}</h2><span>{group.products.length} menu</span></div>
+          <div className="products-category-list">
+            {group.products.map((product) => <article className={`product-management-row ${product.active ? "" : "is-inactive"}`} key={product.id}>
+              <ProductThumbnail src={product.imageUrl} name={product.name} />
+              <div className="product-management-info">
+                <strong>{product.name}</strong>
+                <span>{product.sku}</span>
+                <div className="product-management-meta"><b>{rupiah(product.price)}</b><span>Stok {product.stock}</span></div>
+              </div>
+              <div className="product-management-actions">
+                {canEditMenu && <button type="button" className="product-active-toggle" role="switch" aria-checked={product.active} aria-label={`${product.active ? "Nonaktifkan" : "Aktifkan"} ${product.name}`} disabled={setActive.isPending} onClick={() => setActive.mutate({ id: product.id, active: !product.active })}><span /></button>}
+                {canEditProducts && <button type="button" className="icon-button" aria-label={`Edit ${product.name}`} onClick={() => setForm({ id: product.id, name: product.name, categoryId: product.categoryId, price: product.price, stock: product.stock, imageUrl: product.imageUrl })}><Pencil size={17} /></button>}
+                {canEditMenu && <button type="button" className="icon-button danger" aria-label={`Arsipkan ${product.name}`} disabled={archive.isPending} onClick={() => { if (window.confirm(`Arsipkan ${product.name}? Produk akan dihapus dari daftar menu.`)) archive.mutate({ id: product.id }); }}><Archive size={17} /></button>}
+              </div>
+            </article>)}
+          </div>
+        </section>)}
+      </div>
+    )}
+
+    {canCreateMenu && <div className={`products-add-popover ${addMenuOpen ? "is-open" : ""}`} aria-hidden={!addMenuOpen}>
+      <button type="button" onClick={() => { setAddMenuOpen(false); setForm({ ...emptyForm, categoryId: categories[0]?.id ?? 0 }); }}><Plus size={17} /><span>Tambah Menu</span></button>
+      <button type="button" onClick={() => { setAddMenuOpen(false); setCategoryForm(""); }}><Package size={17} /><span>Tambah Kategori</span></button>
+    </div>}
+
+    <Dialog open={categoryForm !== null} onOpenChange={(open) => { if (!open && !createCategory.isPending) setCategoryForm(null); }}>
+      <DialogContent className="settings-dialog">
+        <form onSubmit={(event) => { event.preventDefault(); if (categoryForm?.trim()) createCategory.mutate({ name: categoryForm.trim(), sortOrder: categories.length }); }}>
+          <DialogTitle>Tambah kategori</DialogTitle>
+          <DialogDescription>Kategori dibuat untuk outlet yang sedang aktif.</DialogDescription>
+          <div className="form-grid"><label className="full">Nama kategori<input autoFocus required minLength={2} maxLength={100} value={categoryForm ?? ""} onChange={(event) => setCategoryForm(event.target.value)} placeholder="Contoh: Minuman" /></label></div>
+          <div className="dialog-actions"><button type="button" className="button secondary" onClick={() => setCategoryForm(null)}>Batal</button><button type="submit" className="button primary" disabled={createCategory.isPending || !categoryForm?.trim()}>{createCategory.isPending ? "Menyimpan…" : "Simpan kategori"}</button></div>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={!!form} onOpenChange={(open) => { if (!open && !pending) setForm(null); }}>
+      <DialogContent className="product-dialog">
+        {form && <form onSubmit={submit}>
+          <DialogTitle>{form.id ? "Edit menu" : "Tambah menu"}</DialogTitle>
+          <DialogDescription>Atur informasi menu yang tampil di kasir.</DialogDescription>
+          <div className="form-grid">
+            <label className="full">Nama menu<input required minLength={2} disabled={!!form.id && !canEditMenu} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Nama menu" /></label>
+            <label>Kategori<select required disabled={!!form.id && !canEditMenu} value={form.categoryId} onChange={(event) => setForm({ ...form, categoryId: Number(event.target.value) })}><option value={0} disabled>Pilih kategori</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+            <label>Stok<input disabled={!!form.id && !canEditStock} type="text" inputMode="numeric" pattern="[0-9]*" value={form.stock || ""} onChange={(event) => { const value = event.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, ""); setForm({ ...form, stock: value === "" ? 0 : Number(value) }); }} placeholder="0" /></label>
+            <label className="full">Harga jual (Rp)<input disabled={!!form.id && !canEditMenu} required type="number" min="100" step="100" value={form.price || ""} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} placeholder="25000" /></label>
+            {(!form.id || canEditMenu) && <div className="full product-photo-field">
+              <span className="product-photo-label">Foto menu (opsional)</span>
+              <div className="product-photo-preview">{form.imageUrl ? <img src={form.imageUrl} alt="Pratinjau foto menu" /> : <span>{form.name.trim().slice(0, 1).toUpperCase() || "?"}</span>}</div>
+              <div className="product-photo-actions">
+                <label className="button secondary"><ImagePlus size={17} />{uploadImage.isPending ? "Mengunggah…" : "Pilih foto"}<input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={pending} onChange={(event) => { selectProductImage(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label>
+                {form.imageUrl && <button type="button" className="button secondary" disabled={pending} onClick={() => setForm({ ...form, imageUrl: null })}><Trash2 size={16} /> Hapus foto</button>}
+              </div>
+              <small>JPG, PNG, WebP, maksimal 5 MB.</small>
+            </div>}
+          </div>
+          <div className="dialog-actions"><button type="button" className="button secondary" onClick={() => setForm(null)}>Batal</button><button type="submit" className="button primary" disabled={pending || (!!form.id && !canEditMenu && !canEditStock)}>{pending ? "Menyimpan…" : "Simpan menu"}</button></div>
+        </form>}
+      </DialogContent>
+    </Dialog>
   </div>;
 }
