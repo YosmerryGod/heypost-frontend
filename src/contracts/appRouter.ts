@@ -97,6 +97,8 @@ export const appRouter = t.router({
     bootstrap: procedure.output(z.object({
       products: z.array(product), categories: z.array(category), outlet, role,
     })).query(typeOnly),
+    listProducts: procedure.output(z.object({ products: z.array(product), categories: z.array(category) })).query(typeOnly),
+    setProductActive: procedure.input(z.object({ id: z.number().int().positive(), active: z.boolean() })).output(product).mutation(typeOnly),
     createCategory: procedure.input(z.object({ name: z.string(), sortOrder: z.number().default(0) })).output(category).mutation(typeOnly),
     uploadProductImage: procedure.input(z.object({ dataUrl: z.string() })).output(z.object({ imageUrl: z.string() })).mutation(typeOnly),
     createProduct: procedure.input(productInput).output(product).mutation(typeOnly),
