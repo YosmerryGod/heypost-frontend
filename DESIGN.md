@@ -3,12 +3,12 @@ version: alpha
 name: heypost
 description: Antarmuka kasir untuk pekerja toko yang perlu membaca menu, memeriksa pesanan, dan menyelesaikan pembayaran dengan cepat dan tenang.
 colors:
-  ground: "#f7f8fa"
+  ground: "#f4f7f5"
   surface: "#ffffff"
   ink: "#111827"
   muted: "#566273"
-  signal: "#0064e6"
-  line: "#e2e7ed"
+  signal: "#16785b"
+  line: "#dfe8e2"
 typography:
   display:
     fontFamily: Archivo Variable
@@ -36,16 +36,16 @@ components:
 
 ## Overview
 
-heypost adalah alat kerja kasir, bukan halaman pemasaran. Arah visualnya mengambil kejelasan struk, label rak, dan papan menu: angka mudah dipindai, batas informasi tegas, dan aksi selalu terlihat. Kepadatan lebih diutamakan daripada dekorasi.
+heypost adalah alat kerja kasir, bukan halaman pemasaran. Arah visualnya mengambil kejelasan struk dan label inventori: angka mudah dipindai, batas informasi tegas, dan aksi selalu terlihat. Palet hijau pinus memberi identitas yang tenang dan mudah dikenali tanpa mengurangi fokus kerja.
 
 ## Colors
 
-- **Ground (#f7f8fa):** bidang kerja netral yang membedakan katalog dari panel pesanan.
+- **Ground (#f4f7f5):** bidang kerja netral yang membedakan katalog dari panel pesanan.
 - **Surface (#ffffff):** formulir, panel pesanan, tabel, dan dialog.
 - **Ink (#111827):** judul, harga, total, dan angka operasional.
 - **Muted (#566273):** informasi sekunder dengan kontras yang tetap terbaca.
-- **Signal (#0064e6):** aksi utama, pilihan aktif, fokus, dan status positif yang membutuhkan perhatian.
-- **Line (#e2e7ed):** pemisah struktural; tidak digunakan sebagai dekorasi.
+- **Signal (#16785b):** aksi utama, pilihan aktif, fokus, dan status positif yang membutuhkan perhatian.
+- **Line (#dfe8e2):** pemisah struktural; tidak digunakan sebagai dekorasi.
 
 ## Typography
 
@@ -71,5 +71,5 @@ Gunakan kembali navigasi, tombol, kolom pencarian, tabel, dialog, dan token di h
 
 - Do utamakan total, harga, stok, dan aksi pembayaran dalam hierarki visual.
 - Do sediakan state fokus, sentuh, kosong, muat, dan galat yang jelas.
-- Don't change: identitas biru heypost, Archivo Variable, dan Figtree Variable.
-- Don't use: gradien dekoratif, glassmorphism tanpa kebutuhan, kartu bersarang, label mono serba kapital, atau pola krem–terakota dan gelap–lime.
+- Don't change: identitas hijau pinus heypost, Archivo Variable, dan Figtree Variable.
+- Don't use: gradien dekoratif, glassmorphism tanpa kebutuhan, kartu bersarang, label mono serba kapital, atau glassmorphism dekoratif dan gradien yang tidak memiliki fungsi.
