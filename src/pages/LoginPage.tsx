@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Eye, EyeOff, KeyRound, Store, UserRound } from "lucide-react";
+import { CircleCheck, Eye, EyeOff, KeyRound, ScanLine, Store, UserRound } from "lucide-react";
 import { Navigate, useNavigate } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { apiConfig } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import type { AuthSession } from "@/hooks/useAuth";
+import { EmployeeBarcodeScanner } from "@/components/EmployeeBarcodeScanner";
 
 type Mode = "login" | "register" | "employee";
 const modes: { id: Mode; label: string }[] = [
@@ -27,6 +28,9 @@ export default function LoginPage() {
   const [owner, setOwner] = useState({ email: "", password: "" });
   const [registration, setRegistration] = useState({ name: "", storeName: "", outletName: "Outlet Utama", email: "", password: "" });
   const [employee, setEmployee] = useState({ barcode: "", pin: "" });
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanSucceeded, setScanSucceeded] = useState(false);
+  const pinInputRef = useRef<HTMLInputElement>(null);
 
   const complete = (session: AuthSession) => {
     utils.auth.me.setData(undefined, session);
@@ -40,7 +44,16 @@ export default function LoginPage() {
 
   const changeMode = (next: Mode) => {
     login.reset(); register.reset(); employeeLogin.reset();
+    setScannerOpen(false);
+    setScanSucceeded(false);
     setMode(next);
+  };
+  const handleBarcodeScan = (barcode: string) => {
+    employeeLogin.reset();
+    setEmployee((current) => ({ ...current, barcode }));
+    setScanSucceeded(true);
+    setScannerOpen(false);
+    window.setTimeout(() => pinInputRef.current?.focus(), 220);
   };
   const activeMutation = mode === "login" ? login : mode === "register" ? register : employeeLogin;
   const submit = (event: FormEvent) => {
@@ -70,7 +83,7 @@ export default function LoginPage() {
         <header className="auth-heading">
           <span className="section-kicker">{mode === "employee" ? "AKSES TIM" : mode === "register" ? "MULAI BERJUALAN" : "SELAMAT DATANG KEMBALI"}</span>
           <h2>{mode === "employee" ? "Masuk sebagai karyawan" : mode === "register" ? "Buat toko baru" : "Masuk ke heypost"}</h2>
-          <p>{mode === "employee" ? "Gunakan barcode dan PIN yang diberikan owner." : mode === "register" ? "Satu toko dan outlet pertama akan dibuat untuk Anda." : "Masuk sebagai owner atau lanjutkan dengan Google."}</p>
+          <p>{mode === "employee" ? "Pindai QR kartu akses atau gunakan barcode dan PIN yang diberikan owner." : mode === "register" ? "Satu toko dan outlet pertama akan dibuat untuk Anda." : "Masuk sebagai owner atau lanjutkan dengan Google."}</p>
         </header>
         <div className="auth-tabs" role="tablist" aria-label="Pilihan akses akun">
           {modes.map((item) => <button key={item.id} type="button" role="tab" aria-selected={mode === item.id} className={mode === item.id ? "active" : ""} onClick={() => changeMode(item.id)}>{item.label}</button>)}
@@ -87,12 +100,17 @@ export default function LoginPage() {
             <label>Email<input required type="email" maxLength={320} autoComplete="email" value={mode === "login" ? owner.email : registration.email} onChange={(event) => mode === "login" ? setOwner({ ...owner, email: event.target.value }) : setRegistration({ ...registration, email: event.target.value })} placeholder="nama@toko.com" /></label>
             <label>Password<span className="password-field"><input required type={showPassword ? "text" : "password"} minLength={mode === "register" ? 8 : 1} maxLength={128} autoComplete={mode === "register" ? "new-password" : "current-password"} value={mode === "login" ? owner.password : registration.password} onChange={(event) => mode === "login" ? setOwner({ ...owner, password: event.target.value }) : setRegistration({ ...registration, password: event.target.value })} placeholder={mode === "register" ? "Minimal 8 karakter" : "Password Anda"} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>
           </> : <>
-            <label>Barcode karyawan<input required minLength={20} maxLength={512} autoComplete="off" spellCheck={false} value={employee.barcode} onChange={(event) => setEmployee({ ...employee, barcode: event.target.value.trim() })} placeholder="Tempel kode barcode dari owner" /></label>
-            <label>PIN 6 digit<input required type="password" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="current-password" value={employee.pin} onChange={(event) => setEmployee({ ...employee, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} placeholder="••••••" /></label>
+            <button className="button secondary scan-employee-button" type="button" onClick={() => { employeeLogin.reset(); setScannerOpen(true); }} disabled={employeeLogin.isPending}>
+              <ScanLine size={19} /> Pindai QR kartu akses
+            </button>
+            {scanSucceeded && <p className="scan-success" role="status"><CircleCheck size={18} /><span>Barcode terisi otomatis. Masukkan PIN 6 digit, lalu tekan Masuk.</span></p>}
+            <label>Barcode karyawan<input required minLength={20} maxLength={512} autoComplete="off" spellCheck={false} value={employee.barcode} onChange={(event) => { setScanSucceeded(false); setEmployee({ ...employee, barcode: event.target.value.trim() }); }} placeholder="Tempel kode barcode dari owner" /></label>
+            <label>PIN 6 digit<input ref={pinInputRef} required type="password" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="current-password" value={employee.pin} onChange={(event) => setEmployee({ ...employee, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} placeholder="••••••" /></label>
           </>}
           {activeMutation.error && <p className="form-error" role="alert">{activeMutation.error.message}</p>}
           <button className="button primary auth-submit" type="submit" disabled={activeMutation.isPending || (mode === "employee" && employee.pin.length !== 6)}>{activeMutation.isPending ? "Memproses…" : mode === "register" ? "Buat akun & buka toko" : "Masuk"}</button>
         </form>
+        {mode === "employee" && scannerOpen && <EmployeeBarcodeScanner open onOpenChange={setScannerOpen} onScan={handleBarcodeScan} />}
         {mode !== "employee" && <>
           <div className="auth-divider"><span>atau</span></div>
           <a className="button secondary google-button" href={apiConfig.googleLoginUrl}><GoogleMark /> Lanjutkan dengan Google</a>
