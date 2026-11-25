@@ -34,6 +34,7 @@ export default function ProductsPage() {
   const create = trpc.pos.createProduct.useMutation({ onSuccess: () => { toast.success("Produk berhasil ditambahkan"); closeAndRefresh(); } });
   const update = trpc.pos.updateProduct.useMutation({ onSuccess: () => { toast.success("Perubahan produk disimpan"); closeAndRefresh(); } });
   const archive = trpc.pos.archiveProduct.useMutation({ onSuccess: () => { toast.success("Produk diarsipkan"); closeAndRefresh(); } });
+  const uploadImage = trpc.pos.uploadProductImage.useMutation();
   function closeAndRefresh() { setForm(null); utils.pos.bootstrap.invalidate(); }
   const products = useMemo(() => data?.products ?? [], [data]);
   const filtered = useMemo(() => products.filter((product) => (category === 0 || product.categoryId === category) && `${product.name} ${product.sku}`.toLowerCase().includes(search.toLowerCase())), [products, category, search]);
@@ -43,7 +44,24 @@ export default function ProductsPage() {
     if (form.id) update.mutate({ ...form, id: form.id });
     else create.mutate(form);
   };
-  const pending = create.isPending || update.isPending;
+  const pending = create.isPending || update.isPending || uploadImage.isPending;
+  const selectProductImage = (file?: File) => {
+    if (!file || !form) return;
+    if (!file.type.startsWith("image/")) { toast.error("Pilih file gambar."); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Ukuran foto maksimal 5 MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      uploadImage.mutate({ dataUrl: String(reader.result ?? "") }, {
+        onSuccess: (result) => {
+          setForm((current) => current ? { ...current, imageUrl: result.imageUrl } : current);
+          toast.success("Foto berhasil diunggah");
+        },
+        onError: (mutationError) => toast.error(mutationError.message),
+      });
+    };
+    reader.onerror = () => toast.error("Foto tidak bisa dibaca dari perangkat.");
+    reader.readAsDataURL(file);
+  };
   return <div className="page-container">
     <header className="page-heading"><div><span className="section-kicker">INVENTORI</span><h1>Produk & stok</h1><p>Kelola menu, harga, dan ketersediaan dalam satu tempat.</p></div><div className="page-actions"><button className="button secondary" onClick={() => setCategoryForm("")}><Plus size={18} /> Kategori</button><button className="button primary" disabled={!data?.categories.length} title={!data?.categories.length ? "Buat kategori terlebih dahulu" : undefined} onClick={() => setForm({ ...emptyForm })}><Plus size={18} /> Tambah produk</button></div></header>
     <div className="inventory-strip"><Package size={21} /><div><strong>{products.length} produk aktif</strong><span>{products.filter((product) => product.stock <= 8).length} produk perlu perhatian stok</span></div><div className="inventory-total"><span>Total unit</span><strong>{products.reduce((sum, product) => sum + product.stock, 0)}</strong></div></div>
