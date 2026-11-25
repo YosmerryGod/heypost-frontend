@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router";
 import { Building2, UsersRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import OutletsPanel from "@/components/OutletsPanel";
@@ -7,7 +8,8 @@ import EmployeesPanel from "@/components/EmployeesPanel";
 type Tab = "outlets" | "employees";
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("outlets");
+  const { search } = useLocation();
+  const [tab, setTab] = useState<Tab>(() => new URLSearchParams(search).get("tab") === "employees" ? "employees" : "outlets");
   const { data: session } = useAuth();
   if (!session) return null;
   return <div className="page-container settings-page">
