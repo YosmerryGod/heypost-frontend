@@ -4,8 +4,8 @@
   "description": "Kasir, stok, dan laporan untuk bisnis yang terus bergerak.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f7f5",
-  "theme_color": "#16785b",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "lang": "id-ID",
   "icons": [
     { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
