@@ -85,7 +85,7 @@ export const appRouter = t.router({
       name: z.string(), role: employeeRole, outletId: z.number(), pin: z.string(), permissions: z.array(permission).optional(),
     })).output(z.object({
       id: z.number(), name: z.string(), role: employeeRole, outletId: z.number(),
-      active: z.boolean(), permissions: z.string(), createdAt: z.date(), barcode: z.string(),
+      active: z.boolean(), permissions: z.array(permission), createdAt: z.date(), barcode: z.string(),
     })).mutation(typeOnly),
     update: procedure.input(z.object({
       id: z.number(), name: z.string().optional(), role: employeeRole.optional(), outletId: z.number().optional(),
