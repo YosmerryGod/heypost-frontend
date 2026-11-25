@@ -24,6 +24,12 @@ export default function AppLayout() {
   const utils = trpc.useUtils();
   const { data: session } = useAuth();
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const searchPlaceholder = pathname === "/" ? "Cari menu..." : pathname === "/transaksi" ? "Cari invoice..." : "Cari...";
+  const closeMobileSearch = useCallback(() => {
+    setIsMobileSearchOpen(false);
+    setMobileSearchQuery("");
+  }, []);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
@@ -57,10 +63,10 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isMobileSearchOpen) return;
     const handlePointerDown = (event: PointerEvent) => {
-      if (!mobileSearchRef.current?.contains(event.target as Node)) setIsMobileSearchOpen(false);
+      if (!mobileSearchRef.current?.contains(event.target as Node)) closeMobileSearch();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsMobileSearchOpen(false);
+      if (event.key === "Escape") closeMobileSearch();
     };
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -68,7 +74,11 @@ export default function AppLayout() {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isMobileSearchOpen]);
+  }, [isMobileSearchOpen, closeMobileSearch]);
+  useEffect(() => {
+    setMobileSearchQuery("");
+    closeMobileSearch();
+  }, [pathname, closeMobileSearch]);
   useEffect(() => {
     if (isMobileSearchOpen) mobileSearchInputRef.current?.focus();
   }, [isMobileSearchOpen]);
@@ -102,7 +112,7 @@ export default function AppLayout() {
       <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>
       <div className="mobile-header-actions">
         <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
-          {isMobileSearchOpen ? <div className="mobile-search-field"><Search size={18} aria-hidden="true" /><input ref={mobileSearchInputRef} type="search" placeholder="Cari..." aria-label="Cari di HeyPost" /></div> : <button className="icon-button mobile-search-trigger" type="button" onClick={() => setIsMobileSearchOpen(true)} aria-label="Buka pencarian" aria-expanded={false}><Search size={19} /></button>}
+          {isMobileSearchOpen ? <div className="mobile-search-field"><Search size={18} aria-hidden="true" /><input ref={mobileSearchInputRef} type="search" value={mobileSearchQuery} onChange={(event) => setMobileSearchQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} /></div> : <button className="icon-button mobile-search-trigger" type="button" onClick={() => setIsMobileSearchOpen(true)} aria-label="Buka pencarian" aria-expanded={false}><Search size={19} /></button>}
         </div>
         {pathname === "/" && <button className="icon-button mobile-cart-trigger" type="button" onClick={() => mobileCartOpenRef.current?.()} aria-label={`Buka detail pesanan, ${mobileCartCount} item`} title="Detail pesanan"><ShoppingBag size={19} />{mobileCartCount > 0 && <span className="mobile-cart-count">{mobileCartCount > 99 ? "99+" : mobileCartCount}</span>}</button>}
         <div className="mobile-profile-menu" ref={mobileProfileRef}>
@@ -116,7 +126,7 @@ export default function AppLayout() {
         </div>
       </div>
     </header>
-    <main className="main-workspace"><div key={activeOutletId}><Outlet context={{ registerMobileCart }} /></div></main>
+    <main className="main-workspace"><div key={activeOutletId}><Outlet context={{ registerMobileCart, mobileSearchQuery }} /></div></main>
     <nav className="bottom-nav" aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}>
       {bottomItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => isActive ? "active" : ""} aria-label={label} title={label}>{({ isActive }) => <><Icon size={21} />{isActive && <span>{label}</span>}</>}</NavLink>)}
     </nav>
