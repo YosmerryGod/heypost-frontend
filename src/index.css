@@ -706,6 +706,7 @@ body { color: var(--ink-900); }
 }
 
 @media (max-width: 390px) {
+  .mobile-header-search.is-open { width: min(34vw, 130px); } /* [ADDED] Preserve room for all header actions on narrow phones. */
   .mobile-profile-popover { width: min(280px, calc(100vw - 24px)); } /* [MODIFIED] Keep the profile menu inside narrow screens. */
   .auth-panel { padding-inline: 17px; }
   .settings-section-head { flex-direction: column; gap: 12px; }
