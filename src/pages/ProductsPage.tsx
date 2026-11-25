@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Archive, ImagePlus, Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Archive, ImagePlus, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useOutletContext } from "react-router";
 import { trpc } from "@/providers/trpc";
@@ -202,7 +202,7 @@ export default function ProductsPage() {
     )}
 
     {canCreateMenu && <div className={`products-add-popover ${addMenuOpen ? "is-open" : ""}`} aria-hidden={!addMenuOpen}>
-      <button type="button" onClick={() => { setAddMenuOpen(false); setForm({ ...emptyForm, categoryId: categories[0]?.id ?? 0 }); }}><Plus size={17} /><span>Tambah Menu</span></button>
+      <button type="button" disabled={!categories.length} title={!categories.length ? "Tambahkan kategori terlebih dahulu" : undefined} onClick={() => { setAddMenuOpen(false); setForm({ ...emptyForm, categoryId: categories[0]?.id ?? 0 }); }}><Plus size={17} /><span>Tambah Menu</span></button>
       <button type="button" onClick={() => { setAddMenuOpen(false); setCategoryForm(""); }}><Package size={17} /><span>Tambah Kategori</span></button>
     </div>}
 
