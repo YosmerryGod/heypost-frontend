@@ -650,6 +650,7 @@ body { color: var(--ink-900); }
   .mobile-workspace-bar .icon-button { width: 44px; height: 44px; flex: 0 0 auto; }
   .mobile-search-trigger { margin-left: auto; }
   .mobile-search-field { width: 100%; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-050); color: var(--ink-600); }
+  .mobile-search-field:focus-within { border-color: var(--blue-600); box-shadow: 0 0 0 3px color-mix(in oklch, var(--blue-600) 12%, transparent); } /* [ADDED] Visible keyboard and input focus state. */
   .mobile-search-field > svg { flex: 0 0 auto; }
   .mobile-search-field input { width: 100%; min-width: 0; min-height: 42px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink-900); font: inherit; font-size: 14px; }
   .mobile-search-field input::placeholder { color: var(--ink-400); }
