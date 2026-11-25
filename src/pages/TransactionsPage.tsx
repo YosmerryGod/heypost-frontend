@@ -30,6 +30,7 @@ export default function TransactionsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editItems, setEditItems] = useState<{ productId: number; quantity: number }[]>([]);
   const [editDiscount, setEditDiscount] = useState("0");
+  const [editCashReceived, setEditCashReceived] = useState("0");
   const canManageTransactions = session?.principal.role === "owner";
   const utils = trpc.useUtils();
   // [ADDED] Pembatalan transaksi hanya tersedia untuk owner.
@@ -82,6 +83,7 @@ export default function TransactionsPage() {
   const openEditDialog = (transaction: TransactionRow) => {
     setEditItems(transaction.items.map((item) => ({ productId: item.productId, quantity: item.quantity })));
     setEditDiscount(String(transaction.discount));
+    setEditCashReceived(String(transaction.cashReceived ?? transaction.total));
     setIsEditDialogOpen(true);
   };
   const saveTransactionEdit = () => {
@@ -94,7 +96,7 @@ export default function TransactionsPage() {
       orderType: selected.orderType as "Makan di tempat" | "Bawa pulang" | "Pesan antar",
       paymentMethod: selected.paymentMethod as "Tunai" | "QRIS" | "Kartu",
       discount,
-      cashReceived: selected.cashReceived ?? undefined,
+      cashReceived: selected.paymentMethod === "Tunai" ? Number(editCashReceived) : undefined,
       items: editItems,
     });
   };
@@ -174,6 +176,7 @@ export default function TransactionsPage() {
             return <label key={item.productId}>{transactionItem?.productName ?? "Produk"}<input type="number" min="1" max="999" value={item.quantity} onChange={(event) => setEditItems((current) => current.map((entry) => entry.productId === item.productId ? { ...entry, quantity: Math.max(1, Math.min(999, Number(event.target.value) || 1)) } : entry))} /></label>;
           })}
           <label>Diskon (Rp)<input type="number" min="0" step="1" value={editDiscount} onChange={(event) => setEditDiscount(event.target.value)} /></label>
+          {selected?.paymentMethod === "Tunai" && <label>Uang diterima (Rp)<input type="number" min="0" step="1" value={editCashReceived} onChange={(event) => setEditCashReceived(event.target.value)} /></label>}
           <div className="expense-form-actions"><button type="button" className="button secondary" onClick={() => setIsEditDialogOpen(false)}>Batal</button><button type="button" className="button primary" disabled={updateTransaction.isPending || !editItems.length} onClick={saveTransactionEdit}>{updateTransaction.isPending ? "Menyimpan..." : "Simpan perubahan"}</button></div>
         </div>
       </DialogContent>
