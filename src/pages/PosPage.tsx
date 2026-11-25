@@ -132,7 +132,7 @@ function PaymentDialog({ open, onOpenChange, total, subtotal, discount, customer
     {method === "Tunai" && <div className="cash-panel"><label>Uang diterima<div className="money-input"><span>Rp</span><input autoFocus type="number" min="0" step="1000" value={cash || ""} onChange={(event) => setCash(Number(event.target.value))} placeholder="0" /></div></label><div className="quick-cash">{[total, Math.ceil(total / 50000) * 50000, Math.ceil(total / 100000) * 100000].filter((value, index, array) => array.indexOf(value) === index).map((value) => <button key={value} onClick={() => setCash(value)}>{rupiah(value)}</button>)}</div><div className={`change-row ${cash >= total ? "positive" : ""}`}><span>Kembalian</span><strong>{rupiah(Math.max(0, cash - total))}</strong></div></div>}
     {method === "Kartu" && <div className="card-panel"><CreditCard size={38} /><h3>Pembayaran kartu</h3><p>Gunakan mesin EDC toko, lalu konfirmasi transaksi setelah pembayaran berhasil.</p></div>}
     <div className="payment-recap"><span>Subtotal {lines.reduce((sum, line) => sum + line.quantity, 0)} item</span><span>{rupiah(subtotal)}{discount > 0 && ` · Diskon ${rupiah(discount)}`}</span></div>
-    <button className="button primary pay-button" onClick={pay} disabled={mutation.isPending || (method === "Tunai" && cash < total)}>{mutation.isPending ? "Memproses…" : method === "QRIS" ? "Konfirmasi simulasi QRIS" : `Bayar ${rupiah(total)}`}</button>
+    <button className="button primary pay-button" onClick={pay} disabled={mutation.isPending || (method === "Tunai" && cash < total)}>{mutation.isPending ? "Memproses…" : `Bayar ${rupiah(total)}`}</button>
   </DialogContent></Dialog>;
 }
 
