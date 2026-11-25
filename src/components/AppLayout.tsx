@@ -36,8 +36,9 @@ export default function AppLayout() {
   const [mobileSearchState, setMobileSearchState] = useState({ pathname, query: "" });
   const mobileSearchQuery = mobileSearchState.pathname === pathname ? mobileSearchState.query : "";
   const setMobileSearchQuery = (query: string) => setMobileSearchState({ pathname, query });
-  const isAdminPage = pathname === "/karyawan" || pathname === "/outlet";
-  const searchPlaceholder = pathname === "/" ? "Cari menu..." : pathname === "/transaksi" ? "Cari invoice..." : pathname === "/karyawan" ? "Cari karyawan..." : pathname === "/outlet" ? "Cari outlet..." : "Cari...";
+  const isProductPage = pathname === "/produk";
+  const isAdminPage = pathname === "/karyawan" || pathname === "/outlet" || isProductPage;
+  const searchPlaceholder = pathname === "/" || isProductPage ? "Cari menu..." : pathname === "/transaksi" ? "Cari invoice..." : pathname === "/karyawan" ? "Cari karyawan..." : pathname === "/outlet" ? "Cari outlet..." : "Cari...";
   const closeMobileSearch = useCallback(() => {
     setIsMobileSearchOpen(false);
     setMobileSearchState({ pathname, query: "" });
@@ -128,12 +129,12 @@ export default function AppLayout() {
       <div className="sidebar-foot"><UserRound size={18} /><div><strong>{principal.name}</strong><span>{principal.role === "owner" ? "Owner" : principal.role === "manager" ? "Manager" : "Kasir"}</span></div><button className="icon-button" onClick={() => logout.mutate()} disabled={logout.isPending} aria-label="Keluar dari akun"><LogOut size={17} /></button></div>
     </aside>
     <header className={`mobile-workspace-bar ${isMobileSearchOpen ? "search-open" : ""} ${isAdminPage ? "admin-workspace-bar" : ""}`}>
-      {isAdminPage ? <div className="mobile-admin-brand"><button className="icon-button mobile-back-trigger" type="button" onClick={() => navigate(-1)} aria-label="Kembali"><ArrowLeft size={20} /></button><NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink></div> : <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>}
+      {isProductPage ? <div className="mobile-admin-brand product-mobile-brand"><button className="icon-button mobile-back-trigger" type="button" onClick={() => navigate(-1)} aria-label="Kembali"><ArrowLeft size={20} /></button><strong className="mobile-menu-title">Menu</strong></div> : isAdminPage ? <div className="mobile-admin-brand"><button className="icon-button mobile-back-trigger" type="button" onClick={() => navigate(-1)} aria-label="Kembali"><ArrowLeft size={20} /></button><NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink></div> : <NavLink to="/" className="mobile-wordmark" aria-label="heypost, ke kasir">hey<span>post</span><b>.</b></NavLink>}
       <div className="mobile-header-actions">
         <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
           {isMobileSearchOpen ? <div className="mobile-search-field"><Search size={18} aria-hidden="true" /><input ref={mobileSearchInputRef} type="search" value={mobileSearchQuery} onChange={(event) => setMobileSearchQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} /></div> : <button className="icon-button mobile-search-trigger" type="button" onClick={() => { setIsMobileSearchOpen(true); }} aria-label="Buka pencarian" aria-expanded={false}><Search size={19} /></button>}
         </div>
-        {isAdminPage && <><button className="icon-button mobile-admin-filter" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-filter", { detail: pathname }))} aria-label="Filter"><Filter size={19} /></button><button className="icon-button mobile-admin-add" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-add", { detail: pathname }))} aria-label="Tambah"><Plus size={21} /></button></>}
+        {isAdminPage && !isProductPage && <button className="icon-button mobile-admin-filter" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-filter", { detail: pathname }))} aria-label="Filter"><Filter size={19} /></button>}{isAdminPage && <button className="icon-button mobile-admin-add" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-add", { detail: pathname }))} aria-label="Tambah"><Plus size={21} /></button>}
         {pathname === "/" && <button className="icon-button mobile-cart-trigger" type="button" onClick={() => mobileCartOpenRef.current?.()} aria-label={`Buka detail pesanan, ${mobileCartCount} item`} title="Detail pesanan"><ShoppingBag size={19} />{mobileCartCount > 0 && <span className="mobile-cart-count">{mobileCartCount > 99 ? "99+" : mobileCartCount}</span>}</button>}
         {!isAdminPage && <div className="mobile-profile-menu" ref={mobileProfileRef}>
           <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil"><UserRound size={19} /></button>
@@ -171,7 +172,7 @@ export default function AppLayout() {
       </Dialog>
     </header>
     <main className="main-workspace"><div key={activeOutletId}><Outlet context={{ registerMobileCart, mobileSearchQuery }} /></div></main>
-    <nav className={`bottom-nav ${isAdminPage ? "admin-bottom-nav-hidden" : ""}`} aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}>
+    <nav className={`bottom-nav ${isAdminPage ? "admin-bottom-nav-hidden" : ""} ${isProductPage ? "products-bottom-nav-hidden" : ""}`} aria-label="Navigasi utama" style={{ gridTemplateColumns: `repeat(${bottomItems.length}, minmax(0, 1fr))` }}>
       {bottomItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => isActive ? "active" : ""} aria-label={label} title={label}>{({ isActive }) => <><Icon size={21} />{isActive && <span>{label}</span>}</>}</NavLink>)}
     </nav>
   </div>;
