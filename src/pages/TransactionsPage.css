@@ -1,0 +1,22 @@
+.transactions-list-section { margin-top: 28px; }
+.transactions-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.transactions-list-heading h2 { font-family: "Archivo Variable", sans-serif; font-size: 20px; font-weight: 720; letter-spacing: -.025em; }
+.transactions-list-actions { display: flex; align-items: center; gap: 9px; }
+.expense-dialog { max-height: 92dvh; overflow-y: auto; border-radius: 14px !important; padding: 26px !important; background: var(--surface-000) !important; }
+.expense-dialog [data-slot="dialog-title"] { font-family: "Archivo Variable", sans-serif; font-size: 23px; letter-spacing: -.03em; }
+.expense-form { margin-top: 18px; }
+.expense-form label { display: grid; gap: 7px; color: var(--ink-900); font-size: 13px; font-weight: 650; }
+.expense-form input, .expense-form select, .expense-form textarea { width: 100%; min-height: 46px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-000); color: var(--ink-900); font: inherit; font-size: 14px; }
+.expense-form textarea { min-height: 86px; padding: 10px 11px; resize: vertical; }
+.expense-form input:focus-visible, .expense-form select:focus-visible, .expense-form textarea:focus-visible { outline: 3px solid color-mix(in oklch, var(--blue-600) 25%, transparent); outline-offset: 1px; }
+.expense-description { grid-column: 1 / -1; }
+.expense-form-actions { display: flex; justify-content: flex-end; gap: 8px; grid-column: 1 / -1; margin-top: 8px; }
+.expense-form-actions .button { min-height: 46px; }
+@media (max-width: 640px) {
+  .transactions-list-heading { align-items: flex-start; flex-direction: column; }
+  .transactions-list-actions { width: 100%; }
+  .transactions-list-actions .button { flex: 1; padding-inline: 10px; }
+  .expense-dialog { width: calc(100% - 24px) !important; max-width: 500px !important; padding: 22px !important; }
+  .expense-form-actions { flex-direction: column-reverse; }
+  .expense-form-actions .button { width: 100%; }
+}
