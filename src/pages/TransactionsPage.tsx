@@ -11,7 +11,7 @@ import "./TransactionsPage.css";
 
 type TransactionRow = {
   id: number; invoiceNumber: string; customerName: string | null; createdAt: Date; orderType: string;
-  paymentMethod: string; status: "Selesai" | "Dibatalkan"; subtotal: number; discount: number; total: number; items: { productId: number; productName: string; quantity: number; unitPrice: number; subtotal: number }[];
+  paymentMethod: string; status: "Selesai" | "Dibatalkan"; subtotal: number; discount: number; total: number; cashReceived: number | null; items: { productId: number; productName: string; quantity: number; unitPrice: number; subtotal: number }[];
 };
 type PaymentMethod = "Tunai" | "QRIS" | "Kartu";
 type ExpenseRow = { id: number; category: string; description: string | null; amount: number; paymentMethod: string; expenseDate: string; status: "Aktif" | "Dibatalkan"; createdAt: Date };
