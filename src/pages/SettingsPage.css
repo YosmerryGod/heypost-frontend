@@ -1,0 +1,50 @@
+/* [ADDED] Receipt and printer settings. */
+.settings-detail-page { max-width: 860px; }
+.receipt-settings-section { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
+.settings-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 17px; }
+.settings-detail-heading h2 { margin: 4px 0; color: var(--ink-900); font-family: "Archivo Variable", sans-serif; font-size: 21px; font-weight: 750; letter-spacing: -.03em; }
+.settings-detail-heading p, .receipt-logo-editor p { margin: 4px 0 0; color: var(--ink-600); font-size: 12px; }
+.settings-muted { display: flex; align-items: center; gap: 7px; color: var(--ink-500); font-size: 11px; line-height: 1.5; }
+.settings-error { color: #b42318; font-size: 13px; }
+.receipt-logo-editor { display: flex; align-items: center; gap: 14px; margin: 15px 0 20px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-000); }
+.receipt-logo-preview { width: 72px; height: 72px; display: grid; flex: 0 0 auto; place-items: center; overflow: hidden; border: 1px dashed var(--line); border-radius: 9px; color: var(--ink-400); }
+.receipt-logo-preview img { width: 100%; height: 100%; object-fit: contain; }
+.receipt-logo-editor strong { color: var(--ink-900); font-size: 13px; }
+.receipt-upload-button { position: relative; display: inline-flex; margin-top: 9px; cursor: pointer; }
+.receipt-upload-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.receipt-toggle-list { overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-000); }
+.receipt-toggle-row { min-height: 49px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 13px; border-bottom: 1px solid var(--line); color: var(--ink-900); font-size: 13px; }
+.receipt-toggle-row:last-child { border-bottom: 0; }
+.receipt-toggle-row input { width: 19px; height: 19px; accent-color: var(--green); }
+.receipt-footer-field { display: grid; gap: 7px; margin-top: 16px; color: var(--ink-900); font-size: 13px; font-weight: 650; }
+.receipt-footer-field textarea { width: 100%; min-height: 76px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-000); color: var(--ink-900); font: inherit; resize: vertical; }
+.receipt-footer-field small { color: var(--ink-500); font-size: 11px; font-weight: 400; }
+.receipt-preview { margin-top: 20px; }
+.receipt-preview-paper { width: min(100%, 290px); display: flex; flex-direction: column; align-items: center; gap: 7px; margin: 10px auto 0; padding: 20px 17px; border: 1px dashed #cbd5ce; background: white; color: #17211b; font-family: monospace; font-size: 11px; text-align: center; }
+.receipt-preview-paper img { max-width: 85px; max-height: 58px; object-fit: contain; }
+.receipt-preview-paper strong { font-size: 13px; }
+.receipt-preview-paper hr { width: 100%; border: 0; border-top: 1px dashed #aab5ad; }
+.receipt-preview-paper p { margin: 4px 0 0; }
+.settings-detail-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.printer-device-row { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-000); }
+.printer-device-row > div { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.printer-device-row strong { color: var(--ink-900); font-size: 13px; }
+.printer-device-row small { color: var(--ink-500); font-size: 11px; }
+.printer-device-row .button { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.printer-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.printer-options label { display: grid; gap: 7px; color: var(--ink-600); font-size: 12px; font-weight: 650; }
+.printer-options select { min-height: 43px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-000); color: var(--ink-900); }
+.printer-forget-button { margin: 9px 0 0 56px; border: 0; background: none; color: #b42318; font: inherit; font-size: 11px; cursor: pointer; }
+.printer-auto-row { margin-top: 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-000); }
+.printer-auto-row span { display: flex; flex-direction: column; gap: 3px; }
+.printer-auto-row strong { font-size: 13px; }
+.printer-auto-row small { color: var(--ink-500); font-size: 11px; }
+.receipt-store-logo { max-width: 90px; max-height: 62px; margin: 0 auto 8px; object-fit: contain; }
+.receipt-store-name { color: var(--ink-900) !important; font-size: 15px !important; font-weight: 750; }
+@media (max-width: 560px) {
+  .receipt-settings-section { margin-top: 24px; padding-top: 20px; }
+  .printer-device-row { flex-wrap: wrap; }
+  .printer-device-row .button { margin-left: 55px; }
+  .printer-options { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .settings-detail-actions .button { width: 100%; }
+}

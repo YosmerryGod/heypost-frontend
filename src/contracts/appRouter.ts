@@ -11,10 +11,16 @@ const typeOnly = () => { throw new Error("Kontrak tipe tidak dapat dijalankan");
 const role = z.enum(["owner", "manager", "kasir"]);
 const employeeRole = z.enum(["manager", "kasir"]);
 const permission = z.enum(["pos.access", "history.daily.view", "invoice.edit", "expenses.daily.create", "expenses.daily.view", "menu.create", "menu.edit", "stock.edit", "reports.sales.view", "outlets.create", "employees.create", "receipt.settings"]);
-const store = z.object({ id: z.number(), name: z.string(), createdAt: z.date(), updatedAt: z.date() });
+const store = z.object({ id: z.number(), name: z.string(), logoUrl: z.string().nullable(), createdAt: z.date(), updatedAt: z.date() });
 const outlet = z.object({
   id: z.number(), storeId: z.number(), name: z.string(), address: z.string().nullable(),
-  active: z.boolean(), createdAt: z.date(), updatedAt: z.date(),
+  whatsappNumber: z.string().nullable(), active: z.boolean(), createdAt: z.date(), updatedAt: z.date(),
+});
+const receiptSettings = z.object({
+  id: z.number(), storeId: z.number(), showLogo: z.boolean(), showStoreName: z.boolean(),
+  showOutletName: z.boolean(), showAddress: z.boolean(), showWhatsapp: z.boolean(),
+  showCashier: z.boolean(), showCustomer: z.boolean(), showHeyPostWatermark: z.boolean(),
+  footerMessage: z.string().nullable(), createdAt: z.date(), updatedAt: z.date(),
 });
 const authPayload = z.object({
   principal: z.object({
@@ -52,7 +58,7 @@ const summary = z.object({
   topProducts: z.array(z.object({ name: z.string(), quantity: z.number(), revenue: z.number() })),
   payments: z.array(z.object({ method: z.string(), total: z.number() })),
 });
-const expense = z.object({ // [ADDED]
+const expense = z.object({
   id: z.number(), storeId: z.number(), outletId: z.number(), userId: z.number().nullable(),
   employeeId: z.number().nullable(), category: z.string(), description: z.string().nullable(),
   amount: z.number(), paymentMethod, expenseDate: z.string(), status: z.enum(["Aktif", "Dibatalkan"]), createdAt: z.date(),
@@ -70,13 +76,26 @@ export const appRouter = t.router({
     logout: procedure.output(z.object({ ok: z.boolean() })).mutation(typeOnly),
   }),
   store: t.router({
-    updateProfile: procedure.input(z.object({ name: z.string() })).output(z.object({ ok: z.boolean(), name: z.string() })).mutation(typeOnly),
+    updateProfile: procedure.input(z.object({
+      name: z.string().optional(), logoUrl: z.string().url().nullable().optional(),
+    })).output(z.object({ ok: z.boolean() })).mutation(typeOnly),
+    uploadLogo: procedure.input(z.object({ dataUrl: z.string() })).output(z.object({ imageUrl: z.string() })).mutation(typeOnly),
+    getReceiptSettings: procedure.output(receiptSettings).query(typeOnly),
+    updateReceiptSettings: procedure.input(z.object({
+      showLogo: z.boolean().optional(), showStoreName: z.boolean().optional(),
+      showOutletName: z.boolean().optional(), showAddress: z.boolean().optional(),
+      showWhatsapp: z.boolean().optional(), showCashier: z.boolean().optional(),
+      showCustomer: z.boolean().optional(), showHeyPostWatermark: z.boolean().optional(),
+      footerMessage: z.string().max(300).nullable().optional(),
+    })).output(receiptSettings).mutation(typeOnly),
     createOutlet: procedure.input(z.object({
-      name: z.string(), address: z.string().optional(), copyMenuFromOutletId: z.number().optional(),
+      name: z.string(), address: z.string().optional(), whatsappNumber: z.string().nullable().optional(),
+      copyMenuFromOutletId: z.number().optional(),
     })).output(outlet).mutation(typeOnly),
     switchOutlet: procedure.input(z.object({ outletId: z.number() })).output(z.object({ ok: z.boolean(), activeOutletId: z.number() })).mutation(typeOnly),
     updateOutlet: procedure.input(z.object({
-      id: z.number(), name: z.string().optional(), address: z.string().nullable().optional(), active: z.boolean().optional(),
+      id: z.number(), name: z.string().optional(), address: z.string().nullable().optional(),
+      whatsappNumber: z.string().nullable().optional(), active: z.boolean().optional(),
     })).output(z.object({ ok: z.boolean() })).mutation(typeOnly),
   }),
   employees: t.router({
@@ -122,10 +141,8 @@ export const appRouter = t.router({
       range: z.enum(["today", "week", "month", "all"]).default("week"), allOutlets: z.boolean().default(false),
     })).output(summary).query(typeOnly),
   }),
-  expenses: t.router({ // [ADDED]
-    list: procedure.input(z.object({
-      fromDate: z.string().optional(), toDate: z.string().optional(),
-    }).optional()).output(z.array(expense)).query(typeOnly),
+  expenses: t.router({
+    list: procedure.input(z.object({ fromDate: z.string().optional(), toDate: z.string().optional() }).optional()).output(z.array(expense)).query(typeOnly),
     create: procedure.input(z.object({
       category: z.string(), description: z.string().optional(), amount: z.number(),
       paymentMethod, expenseDate: z.string(),

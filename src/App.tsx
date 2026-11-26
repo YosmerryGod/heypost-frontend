@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import SettingsPage from "@/pages/SettingsPage";
+import "@/pages/SettingsPage.css";
 import { Navigate, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import AppLayout from "@/components/AppLayout";

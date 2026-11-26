@@ -69,6 +69,7 @@ function ProductImage({ src, name, className = "" }: { src: string | null; name:
 export default function PosPage() {
   const { data, isLoading, error, refetch } = trpc.pos.bootstrap.useQuery();
   const { data: session } = useAuth();
+  const { data: receiptSettings } = trpc.store.getReceiptSettings.useQuery();
   // [ADDED] Report cart quantity and expose the existing cart dialog to the app header.
   const { registerMobileCart, mobileSearchQuery } = useOutletContext<{ registerMobileCart: (count: number, openCart: (() => void) | null) => void; mobileSearchQuery: string }>();
   const [cart, setCart] = useState<Cart>({});
@@ -248,6 +249,10 @@ export default function PosPage() {
     <ReceiptDialog
       sale={completed}
       storeLabel={session ? `${session.store.name} — ${session.outlets.find((outlet) => outlet.id === session.activeOutletId)?.name ?? "Outlet aktif"}` : "HeyPost"}
+      logoUrl={session?.store.logoUrl ?? null}
+      outlet={session?.outlets.find((outlet) => outlet.id === session.activeOutletId)}
+      settings={receiptSettings}
+      cashierName={session?.principal.name ?? ""}
       onClose={() => { setCompleted(null); setPaymentOpen(false); }}
     />
     <Dialog open={clearOpen} onOpenChange={setClearOpen}>
@@ -421,7 +426,14 @@ function PaymentDialog({ open, onOpenChange, total, subtotal, discount, customer
   </Dialog>;
 }
 
-function ReceiptDialog({ sale, storeLabel, onClose }: { sale: Sale | null; storeLabel: string; onClose: () => void }) {
+function ReceiptDialog({ sale, storeLabel, logoUrl, outlet, settings, cashierName, onClose }: {
+  sale: Sale | null; storeLabel: string; logoUrl: string | null;
+  outlet?: { address: string | null; whatsappNumber: string | null };
+  settings?: { showLogo: boolean; showStoreName: boolean; showOutletName: boolean; showAddress: boolean; showWhatsapp: boolean; showCashier: boolean; showCustomer: boolean; showHeyPostWatermark: boolean; footerMessage: string | null };
+  cashierName: string; onClose: () => void;
+}) {
+  const flags = settings ?? { showLogo: true, showStoreName: true, showOutletName: true, showAddress: true, showWhatsapp: true, showCashier: true, showCustomer: true, showHeyPostWatermark: true, footerMessage: null };
+  const [storeName, outletName] = storeLabel.split(" — ");
   return <Dialog open={!!sale} onOpenChange={(open) => { if (!open) onClose(); }}>
     <DialogContent className="cashier-receipt-dialog">
       {sale && <>
@@ -429,9 +441,13 @@ function ReceiptDialog({ sale, storeLabel, onClose }: { sale: Sale | null; store
         <DialogTitle>Pembayaran berhasil</DialogTitle>
         <DialogDescription>{sale.invoiceNumber}<br />{formatDate(sale.createdAt)}</DialogDescription>
         <div className="receipt-paper">
-          <div className="receipt-brand">hey<span>post</span>.</div>
-          <p>{storeLabel}</p>
-          <div className="receipt-meta"><span>{sale.customerName || "Pelanggan toko"}</span><span>{sale.orderType}</span></div>
+          {flags.showLogo && logoUrl && <img className="receipt-store-logo" src={logoUrl} alt="Logo toko" />}
+          {flags.showStoreName && <p className="receipt-store-name">{storeName}</p>}
+          {flags.showOutletName && <p>{outletName}</p>}
+          {flags.showAddress && outlet?.address && <p>{outlet.address}</p>}
+          {flags.showWhatsapp && outlet?.whatsappNumber && <p>WhatsApp: {outlet.whatsappNumber}</p>}
+          <div className="receipt-meta"><span>{sale.invoiceNumber}</span><span>{formatDate(sale.createdAt)}</span></div>
+          {flags.showCustomer && <div className="receipt-meta"><span>{sale.customerName || "Pelanggan toko"}</span><span>{sale.orderType}</span></div>}
           {sale.items.map((item, index) => <div className="receipt-item" key={`${item.productName}-${index}`}><span>{item.quantity}× {item.productName}</span><strong>{rupiah(item.subtotal)}</strong></div>)}
           <div className="cashier-receipt-calculation">
             <div><span>Subtotal</span><span>{rupiah(sale.subtotal)}</span></div>
@@ -439,7 +455,9 @@ function ReceiptDialog({ sale, storeLabel, onClose }: { sale: Sale | null; store
           </div>
           <div className="receipt-total"><span>Total · {sale.paymentMethod}</span><strong>{rupiah(sale.total)}</strong></div>
           {sale.paymentMethod === "Tunai" && <div className="receipt-meta"><span>Tunai {rupiah(sale.cashReceived ?? 0)}</span><span>Kembali {rupiah((sale.cashReceived ?? 0) - sale.total)}</span></div>}
-          <p className="receipt-thanks">Terima kasih. Sampai jumpa lagi!</p>
+          {flags.showCashier && <p>Kasir: {cashierName}</p>}
+          {flags.footerMessage && <p className="receipt-thanks">{flags.footerMessage}</p>}
+          {flags.showHeyPostWatermark && <p className="receipt-thanks">Powered by HeyPost</p>}
         </div>
         <div className="receipt-actions">
           <button className="button secondary" type="button" onClick={() => window.print()}>Cetak struk</button>
