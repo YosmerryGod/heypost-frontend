@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Building2, ChartNoAxesColumnIncreasing, Filter, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, ShoppingBag, Store, UserRound, UsersRound } from "lucide-react";
+import { ArrowLeft, ChartNoAxesColumnIncreasing, Filter, LogOut, Mail, Package, Pencil, Plus, ReceiptText, Search, Settings, ShoppingBag, Store, UserRound } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -14,15 +14,13 @@ const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: 
   { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"], permission: "history.daily.view" },
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager", "kasir"], permission: "menu.create" }, // [MODIFIED]
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"], permission: "reports.sales.view" },
-  { to: "/outlet", label: "Outlet", icon: Building2, roles: ["owner"] },
-  { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
+  { to: "/pengaturan", label: "Pengaturan", icon: Settings, roles: ["owner"] },
 ];
 
 const bottomNavigationPaths = new Set(["/", "/transaksi"]);
 const profileNavigation: { to: string; label: string; icon: typeof Package; roles: Role[]; permission?: PermissionKey }[] = [
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager", "kasir"], permission: "menu.create" }, // [MODIFIED]
-  { to: "/outlet", label: "Outlet", icon: Store, roles: ["owner"] },
-  { to: "/karyawan", label: "Karyawan", icon: UsersRound, roles: ["owner"] },
+  { to: "/pengaturan", label: "Pengaturan", icon: Settings, roles: ["owner"] },
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"], permission: "reports.sales.view" }, // [MODIFIED]
 ];
 
@@ -37,7 +35,7 @@ export default function AppLayout() {
   const mobileSearchQuery = mobileSearchState.pathname === pathname ? mobileSearchState.query : "";
   const setMobileSearchQuery = (query: string) => setMobileSearchState({ pathname, query });
   const isProductPage = pathname === "/produk";
-  const isAdminPage = pathname === "/karyawan" || pathname === "/outlet" || isProductPage;
+  const isAdminPage = pathname === "/karyawan" || pathname === "/outlet" || pathname === "/pengaturan" || isProductPage;
   const searchPlaceholder = pathname === "/" || isProductPage ? "Cari menu..." : pathname === "/transaksi" ? "Cari invoice..." : pathname === "/karyawan" ? "Cari karyawan..." : pathname === "/outlet" ? "Cari outlet..." : "Cari...";
   const closeMobileSearch = useCallback(() => {
     setIsMobileSearchOpen(false);
@@ -134,7 +132,7 @@ export default function AppLayout() {
         <div className={`mobile-header-search ${isMobileSearchOpen ? "is-open" : ""}`} ref={mobileSearchRef}>
           {isMobileSearchOpen ? <div className="mobile-search-field"><Search size={18} aria-hidden="true" /><input ref={mobileSearchInputRef} type="search" value={mobileSearchQuery} onChange={(event) => setMobileSearchQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} /></div> : <button className="icon-button mobile-search-trigger" type="button" onClick={() => { setIsMobileSearchOpen(true); }} aria-label="Buka pencarian" aria-expanded={false}><Search size={19} /></button>}
         </div>
-        {isAdminPage && !isProductPage && <button className="icon-button mobile-admin-filter" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-filter", { detail: pathname }))} aria-label="Filter"><Filter size={19} /></button>}{isAdminPage && <button className="icon-button mobile-admin-add" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-add", { detail: pathname }))} aria-label="Tambah"><Plus size={21} /></button>}
+        {(pathname === "/karyawan" || pathname === "/outlet") && <button className="icon-button mobile-admin-filter" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-filter", { detail: pathname }))} aria-label="Filter"><Filter size={19} /></button>}{(pathname === "/karyawan" || pathname === "/outlet" || isProductPage) && <button className="icon-button mobile-admin-add" type="button" onClick={() => window.dispatchEvent(new CustomEvent("heypost:admin-add", { detail: pathname }))} aria-label="Tambah"><Plus size={21} /></button>}
         {pathname === "/" && <button className="icon-button mobile-cart-trigger" type="button" onClick={() => mobileCartOpenRef.current?.()} aria-label={`Buka detail pesanan, ${mobileCartCount} item`} title="Detail pesanan"><ShoppingBag size={19} />{mobileCartCount > 0 && <span className="mobile-cart-count">{mobileCartCount > 99 ? "99+" : mobileCartCount}</span>}</button>}
         {!isAdminPage && <div className="mobile-profile-menu" ref={mobileProfileRef}>
           <button className="icon-button mobile-profile-trigger" type="button" onClick={() => setIsMobileProfileOpen((open) => !open)} aria-expanded={isMobileProfileOpen} aria-label="Buka profil"><UserRound size={19} /></button>
@@ -150,7 +148,6 @@ export default function AppLayout() {
             <div className="mobile-profile-store-name"><Store size={18} /><strong>{store.name}</strong></div>
             <div className="mobile-profile-section-heading"><span>OUTLET</span><span className="mobile-profile-current-label">SAAT INI</span></div>
             <div className="mobile-profile-outlet">{outletControl}</div>
-            {principal.role === "owner" && <button className="mobile-profile-add-outlet" type="button" onClick={() => { setIsMobileProfileOpen(false); navigate("/outlet"); }}><Plus size={17} /><span>Tambah outlet</span></button>}
             {profileItems.length > 0 && <div className="mobile-profile-menu-group">
               <div className="mobile-profile-section-heading"><span>MENU</span></div>
               <nav className="mobile-profile-links" aria-label="Menu manajemen">{profileItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} onClick={() => setIsMobileProfileOpen(false)} className={({ isActive }) => isActive ? "active" : ""}><Icon size={18} /><span>{label}</span><span className="mobile-profile-link-arrow">›</span></NavLink>)}</nav>
