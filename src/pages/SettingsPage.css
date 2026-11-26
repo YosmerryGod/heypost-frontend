@@ -48,3 +48,8 @@
   .printer-options { grid-template-columns: 1fr 1fr; gap: 8px; }
   .settings-detail-actions .button { width: 100%; }
 }
+
+/* [ADDED] Dedicated settings subpage navigation. */
+.settings-subpage-heading { margin-bottom: 8px; }
+.settings-back-link { display: inline-flex; margin-bottom: 14px; color: var(--ink-600); font-size: 12px; font-weight: 650; text-decoration: none; }
+.settings-back-link:hover { color: var(--ink-900); }
