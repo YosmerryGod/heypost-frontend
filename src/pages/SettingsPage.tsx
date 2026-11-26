@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+// [MODIFIED] useEffect dihapus karena tidak lagi digunakan.
+import { useState } from "react";
 import type { ChangeEvent } from "react";
 import { Building2, Check, CreditCard, ImagePlus, Printer, ReceiptText, Settings, UsersRound, Bluetooth, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "react-router";
