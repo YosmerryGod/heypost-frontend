@@ -53,3 +53,18 @@
 .settings-subpage-heading { margin-bottom: 8px; }
 .settings-back-link { display: inline-flex; margin-bottom: 14px; color: var(--ink-600); font-size: 12px; font-weight: 650; text-decoration: none; }
 .settings-back-link:hover { color: var(--ink-900); }
+
+
+/* [ADDED] Compact receipt preview-first layout and browser test print. */
+.receipt-review-section { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 4px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-000); }
+.receipt-review-heading { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.receipt-review-heading h2 { margin: 3px 0 0; color: var(--ink-900); font-family: "Archivo Variable", sans-serif; font-size: 17px; font-weight: 750; letter-spacing: -.025em; }
+.receipt-review-paper { margin: 0 auto; border: 1px dashed #cbd5ce; box-shadow: 0 3px 12px rgb(15 23 42 / 5%); }
+.receipt-test-button { width: 100%; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.settings-subpage-heading:has(+ .receipt-review-section) { margin-bottom: 12px; }
+@media print {
+  body.receipt-test-print * { visibility: hidden !important; }
+  body.receipt-test-print .receipt-review-paper,
+  body.receipt-test-print .receipt-review-paper * { visibility: visible !important; }
+  body.receipt-test-print .receipt-review-paper { position: absolute; top: 0; left: 0; width: 58mm; max-width: 58mm; margin: 0; padding: 0; border: 0; box-shadow: none; }
+}
