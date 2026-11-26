@@ -143,7 +143,7 @@ export default function SettingsPage() {
     {isReceipt && <>
     <section className="receipt-review-section" aria-label="Pratinjau struk">
       <div className="receipt-review-heading"><div><span className="section-kicker">PRATINJAU</span><h2>Hasil cetak struk</h2></div></div>
-      {receiptDraft && <div className="receipt-preview-paper receipt-paper-thermal receipt-review-paper">
+      {receiptDraft && <div className="receipt-preview-paper receipt-paper-thermal receipt-review-paper" style={{ width: `${printer.paperWidth}mm`, maxWidth: `${printer.paperWidth}mm` }}>
         <header className="receipt-header">
           {receiptDraft.showLogo && (logoPreview || session.store.logoUrl) && <img className="receipt-store-logo" src={logoPreview || session.store.logoUrl || ""} alt="" />}
           {receiptDraft.showStoreName && <h3>{session.store.name}</h3>}
@@ -166,7 +166,7 @@ export default function SettingsPage() {
         <div className="receipt-divider" />
         <footer className="receipt-footer">{receiptDraft.footerMessage && <p>{receiptDraft.footerMessage}</p>}{receiptDraft.showHeyPostWatermark && <small>Powered by HeyPost</small>}</footer>
       </div>}
-      <button className="button primary receipt-test-button" type="button" onClick={testReceipt}><Printer size={17} /> Test Struk</button>
+      <button className="button primary receipt-test-button" type="button" onClick={testReceipt} disabled={!receiptDraft}><Printer size={17} /> Test Struk</button>
     </section>
     <section className="receipt-settings-section" id="receipt">
       {isLoading ? <p className="settings-muted">Memuat pengaturan struk…</p> : error ? <p className="settings-error" role="alert">{error.message}</p> : receiptDraft && <>
