@@ -14,7 +14,7 @@ const navigation: { to: string; label: string; icon: typeof ShoppingBag; roles: 
   { to: "/transaksi", label: "Riwayat Harian", icon: ReceiptText, roles: ["owner", "manager", "kasir"], permission: "history.daily.view" },
   { to: "/produk", label: "Produk", icon: Package, roles: ["owner", "manager", "kasir"], permission: "menu.create" }, // [MODIFIED]
   { to: "/laporan", label: "Laporan", icon: ChartNoAxesColumnIncreasing, roles: ["owner", "manager"], permission: "reports.sales.view" },
-  { to: "/pengaturan", label: "Pengaturan", icon: Settings, roles: ["owner"] },
+  { to: "/pengaturan", label: "Pengaturan", icon: Settings, roles: ["owner"] }, // [MODIFIED]
 ];
 
 const bottomNavigationPaths = new Set(["/", "/transaksi"]);
@@ -148,6 +148,7 @@ export default function AppLayout() {
             <div className="mobile-profile-store-name"><Store size={18} /><strong>{store.name}</strong></div>
             <div className="mobile-profile-section-heading"><span>OUTLET</span><span className="mobile-profile-current-label">SAAT INI</span></div>
             <div className="mobile-profile-outlet">{outletControl}</div>
+            {/* [MODIFIED] Outlet dan karyawan tidak lagi ditampilkan sebagai pintasan manajemen di profil. */}
             {profileItems.length > 0 && <div className="mobile-profile-menu-group">
               <div className="mobile-profile-section-heading"><span>MENU</span></div>
               <nav className="mobile-profile-links" aria-label="Menu manajemen">{profileItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} onClick={() => setIsMobileProfileOpen(false)} className={({ isActive }) => isActive ? "active" : ""}><Icon size={18} /><span>{label}</span><span className="mobile-profile-link-arrow">›</span></NavLink>)}</nav>
