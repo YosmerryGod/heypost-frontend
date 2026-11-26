@@ -440,24 +440,46 @@ function ReceiptDialog({ sale, storeLabel, logoUrl, outlet, settings, cashierNam
         <div className="cashier-receipt-success"><CircleCheckBig size={32} /></div>
         <DialogTitle>Pembayaran berhasil</DialogTitle>
         <DialogDescription>{sale.invoiceNumber}<br />{formatDate(sale.createdAt)}</DialogDescription>
-        <div className="receipt-paper">
-          {flags.showLogo && logoUrl && <img className="receipt-store-logo" src={logoUrl} alt="Logo toko" />}
-          {flags.showStoreName && <p className="receipt-store-name">{storeName}</p>}
-          {flags.showOutletName && <p>{outletName}</p>}
-          {flags.showAddress && outlet?.address && <p>{outlet.address}</p>}
-          {flags.showWhatsapp && outlet?.whatsappNumber && <p>WhatsApp: {outlet.whatsappNumber}</p>}
-          <div className="receipt-meta"><span>{sale.invoiceNumber}</span><span>{formatDate(sale.createdAt)}</span></div>
-          {flags.showCustomer && <div className="receipt-meta"><span>{sale.customerName || "Pelanggan toko"}</span><span>{sale.orderType}</span></div>}
-          {sale.items.map((item, index) => <div className="receipt-item" key={`${item.productName}-${index}`}><span>{item.quantity}× {item.productName}</span><strong>{rupiah(item.subtotal)}</strong></div>)}
-          <div className="cashier-receipt-calculation">
-            <div><span>Subtotal</span><span>{rupiah(sale.subtotal)}</span></div>
-            {sale.discount > 0 && <div><span>Diskon</span><span>−{rupiah(sale.discount)}</span></div>}
-          </div>
-          <div className="receipt-total"><span>Total · {sale.paymentMethod}</span><strong>{rupiah(sale.total)}</strong></div>
-          {sale.paymentMethod === "Tunai" && <div className="receipt-meta"><span>Tunai {rupiah(sale.cashReceived ?? 0)}</span><span>Kembali {rupiah((sale.cashReceived ?? 0) - sale.total)}</span></div>}
-          {flags.showCashier && <p>Kasir: {cashierName}</p>}
-          {flags.footerMessage && <p className="receipt-thanks">{flags.footerMessage}</p>}
-          {flags.showHeyPostWatermark && <p className="receipt-thanks">Powered by HeyPost</p>}
+        <div className="receipt-paper receipt-paper-thermal">
+          <header className="receipt-header">
+            {flags.showLogo && logoUrl && <img className="receipt-store-logo" src={logoUrl} alt="Logo toko" />}
+            {flags.showStoreName && <h3 className="receipt-store-name">{storeName}</h3>}
+            {flags.showOutletName && <p className="receipt-outlet-name">{outletName}</p>}
+            {flags.showAddress && outlet?.address && <p>{outlet.address}</p>}
+            {flags.showWhatsapp && outlet?.whatsappNumber && <p>WhatsApp: {outlet.whatsappNumber}</p>}
+          </header>
+          <div className="receipt-divider" />
+          <section className="receipt-information" aria-label="Informasi transaksi">
+            <div><span>No. Transaksi</span><strong>{sale.invoiceNumber}</strong></div>
+            <div><span>Tanggal</span><strong>{formatDate(sale.createdAt)}</strong></div>
+            {flags.showCashier && <div><span>Kasir</span><strong>{cashierName || "—"}</strong></div>}
+            {flags.showCustomer && <div><span>Pelanggan</span><strong>{sale.customerName || "Pelanggan toko"}</strong></div>}
+            <div><span>Tipe pesanan</span><strong>{sale.orderType}</strong></div>
+          </section>
+          <div className="receipt-divider" />
+          <section className="receipt-products" aria-label="Detail pesanan">
+            <strong className="receipt-section-label">DETAIL PESANAN</strong>
+            {sale.items.map((item, index) => <div className="receipt-product" key={`${item.productName}-${index}`}>
+              <div className="receipt-product-heading"><strong>{item.productName}</strong><strong>{rupiah(item.subtotal)}</strong></div>
+              <span>{item.quantity} × {rupiah(item.unitPrice)}</span>
+            </div>)}
+          </section>
+          <div className="receipt-divider" />
+          <section className="receipt-payment" aria-label="Ringkasan pembayaran">
+            <div><span>Subtotal</span><strong>{rupiah(sale.subtotal)}</strong></div>
+            {sale.discount > 0 && <div><span>Diskon</span><strong>−{rupiah(sale.discount)}</strong></div>}
+            <div className="receipt-grand-total"><span>TOTAL</span><strong>{rupiah(sale.total)}</strong></div>
+            <div><span>Metode pembayaran</span><strong>{sale.paymentMethod}</strong></div>
+            {sale.paymentMethod === "Tunai" && <>
+              <div><span>Tunai diterima</span><strong>{rupiah(sale.cashReceived ?? 0)}</strong></div>
+              <div><span>Kembalian</span><strong>{rupiah((sale.cashReceived ?? 0) - sale.total)}</strong></div>
+            </>}
+          </section>
+          <div className="receipt-divider" />
+          <footer className="receipt-footer">
+            {flags.footerMessage && <p className="receipt-thanks">{flags.footerMessage}</p>}
+            {flags.showHeyPostWatermark && <p className="receipt-thanks">Powered by HeyPost</p>}
+          </footer>
         </div>
         <div className="receipt-actions">
           <button className="button secondary" type="button" onClick={() => window.print()}>Cetak struk</button>
