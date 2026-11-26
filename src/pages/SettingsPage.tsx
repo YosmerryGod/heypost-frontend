@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Building2, Check, CreditCard, ImagePlus, Printer, ReceiptText, Settings, UsersRound, Bluetooth, RefreshCw } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,8 +13,8 @@ const settingsGroups: { title: string; items: SettingsItem[] }[] = [
     { label: "Karyawan", description: "Kelola akun dan hak akses tim", icon: UsersRound, to: "/karyawan" },
   ] },
   { title: "TRANSAKSI", items: [
-    { label: "Pengaturan Struk", description: "Logo, identitas, informasi, dan footer struk", icon: ReceiptText, to: "#receipt" },
-    { label: "Printer", description: "Hubungkan printer dan preferensi perangkat", icon: Printer, to: "#printer" },
+    { label: "Pengaturan Struk", description: "Logo, identitas, informasi, dan footer struk", icon: ReceiptText, to: "/pengaturan/struk" },
+    { label: "Printer", description: "Hubungkan printer dan preferensi perangkat", icon: Printer, to: "/pengaturan/printer" },
     { label: "Pembayaran", description: "Metode pembayaran yang diterima", icon: CreditCard },
   ] },
   { title: "APLIKASI", items: [{ label: "Preferensi", description: "Pengaturan dan perilaku aplikasi", icon: Settings }] },
@@ -30,6 +30,10 @@ const defaultPrinter: PrinterPrefs = { deviceId: "", deviceName: "", paperWidth:
 const printerStorageKey = "heypost:printer-preferences:v1";
 
 export default function SettingsPage() {
+  const location = useLocation();
+  const isHub = location.pathname === "/pengaturan";
+  const isReceipt = location.pathname === "/pengaturan/struk";
+  const isPrinter = location.pathname === "/pengaturan/printer";
   const { data: session } = useAuth();
   const utils = trpc.useUtils();
   const { data: receipt, isLoading, error } = trpc.store.getReceiptSettings.useQuery(undefined, { enabled: !!session });
@@ -114,14 +118,13 @@ export default function SettingsPage() {
   ];
 
   return <div className="page-container settings-page settings-hub settings-detail-page">
-    <header className="page-heading"><div><span className="section-kicker">PREFERENSI TOKO</span><h1>Pengaturan</h1><p>Kelola {session.store.name} dan perangkat kasir.</p></div></header>
-    <div className="settings-hub-group"><h2>MENU PENGATURAN</h2><div className="settings-hub-list">
+    {isHub && <header className="page-heading"><div><span className="section-kicker">PREFERENSI TOKO</span><h1>Pengaturan</h1><p>Kelola {session.store.name} dan perangkat kasir.</p></div>    {isHub ? <div className="settings-hub-group"><h2>MENU PENGATURAN</h2><div className="settings-hub-list">
       {settingsGroups.flatMap((group) => group.items).map(({ label, description, icon: Icon, to }) => {
         const content = <><span className="settings-hub-icon"><Icon size={20} /></span><span className="settings-hub-copy"><strong>{label}</strong><small>{description}</small></span>{to ? <span className="settings-hub-arrow" aria-hidden="true">›</span> : <span className="settings-hub-soon">Segera</span>}</>;
-        return to && to.startsWith("/") ? <Link className="settings-hub-row" key={label} to={to}>{content}</Link> : to ? <a className="settings-hub-row" key={label} href={to}>{content}</a> : <div className="settings-hub-row is-disabled" key={label} aria-disabled="true">{content}</div>;
+        return to ? <Link className="settings-hub-row" key={label} to={to}>{content}</Link> : <div className="settings-hub-row is-disabled" key={label} aria-disabled="true">{content}</div>;
       })}
-    </div></div>
-
+    </div></div> : <header className="page-heading settings-subpage-heading"><div><Link className="settings-back-link" to="/pengaturan">‹ Pengaturan</Link><span className="section-kicker">{isReceipt ? "IDENTITAS TOKO" : "PERANGKAT INI"}</span><h1>{isReceipt ? "Pengaturan struk" : "Printer Bluetooth"}</h1><p>{isReceipt ? "Atur informasi yang tampil pada setiap struk." : "Kelola koneksi dan preferensi printer di perangkat ini."}</p></div></header>}
+    {isReceipt && <>
     <section className="receipt-settings-section" id="receipt">
       <div className="settings-detail-heading"><div><span className="section-kicker">IDENTITAS TOKO</span><h2>Pengaturan struk</h2><p>Preferensi ini berlaku untuk semua perangkat di toko.</p></div></div>
       {isLoading ? <p className="settings-muted">Memuat pengaturan struk…</p> : error ? <p className="settings-error" role="alert">{error.message}</p> : draft && <>
@@ -145,7 +148,8 @@ export default function SettingsPage() {
         <div className="settings-detail-actions"><button className="button primary" type="button" onClick={() => saveReceipt.mutate({ ...draft, footerMessage: draft.footerMessage.trim() || null })} disabled={saveReceipt.isPending}>{saveReceipt.isPending ? "Menyimpan…" : "Simpan pengaturan struk"}</button></div>
       </>}
     </section>
-
+    </>}
+    {isPrinter && <>
     <section className="receipt-settings-section printer-settings-section" id="printer">
       <div className="settings-detail-heading"><div><span className="section-kicker">PERANGKAT INI</span><h2>Printer Bluetooth</h2><p>Koneksi dan preferensi printer disimpan lokal di perangkat ini.</p></div></div>
       <div className="printer-device-row"><span className="settings-hub-icon"><Bluetooth size={21} /></span><div><strong>{printer.deviceName || "Belum ada printer dipilih"}</strong><small>{printer.deviceId ? "Perangkat tersimpan di HP ini" : "Hubungkan printer thermal Bluetooth"}</small></div><button type="button" className="button secondary" onClick={pairPrinter} disabled={printerBusy}>{printerBusy ? "Mencari…" : <><Bluetooth size={16} /> Hubungkan</>}</button></div>
@@ -158,5 +162,6 @@ export default function SettingsPage() {
       <p className="settings-muted"><RefreshCw size={14} /> Pengaturan printer tidak ikut berpindah saat akun login di HP lain. Pemilihan perangkat belum menjamin kompatibilitas protokol cetak; printer perlu mendukung metode cetak yang digunakan browser.</p>
       <div className="settings-muted"><Check size={15} /> Preferensi perangkat tersimpan otomatis.</div>
     </section>
+    </>} </section>
   </div>;
 }
