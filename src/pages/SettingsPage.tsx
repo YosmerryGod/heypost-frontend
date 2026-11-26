@@ -2,7 +2,7 @@
 import { useState } from "react";
 import type { ChangeEvent } from "react";
 import { Building2, Check, CreditCard, ImagePlus, Printer, ReceiptText, Settings, UsersRound, Bluetooth, RefreshCw } from "lucide-react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,6 +32,7 @@ const printerStorageKey = "heypost:printer-preferences:v1";
 
 export default function SettingsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isHub = location.pathname === "/pengaturan";
   const isReceipt = location.pathname === "/pengaturan/struk";
   const isPrinter = location.pathname === "/pengaturan/printer";
@@ -96,6 +97,18 @@ export default function SettingsPage() {
       if (cause instanceof Error && cause.name !== "NotFoundError") toast.error(cause.message);
     } finally { setPrinterBusy(false); }
   };
+  // [ADDED] Test struk menggunakan dialog cetak browser jika printer sudah dipilih.
+  const testReceipt = () => {
+    if (!printer.deviceId) {
+      toast.info("Hubungkan printer terlebih dahulu.");
+      navigate("/pengaturan/printer");
+      return;
+    }
+    document.body.classList.add("receipt-test-print");
+    window.addEventListener("afterprint", () => document.body.classList.remove("receipt-test-print"), { once: true });
+    window.print();
+  };
+
   const chooseLogo = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -126,10 +139,36 @@ export default function SettingsPage() {
         const content = <><span className="settings-hub-icon"><Icon size={20} /></span><span className="settings-hub-copy"><strong>{label}</strong><small>{description}</small></span>{to ? <span className="settings-hub-arrow" aria-hidden="true">›</span> : <span className="settings-hub-soon">Segera</span>}</>;
         return to ? <Link className="settings-hub-row" key={label} to={to}>{content}</Link> : <div className="settings-hub-row is-disabled" key={label} aria-disabled="true">{content}</div>;
       })}
-    </div></div> : <header className="page-heading settings-subpage-heading"><div><Link className="settings-back-link" to="/pengaturan">‹ Pengaturan</Link><span className="section-kicker">{isReceipt ? "IDENTITAS TOKO" : "PERANGKAT INI"}</span><h1>{isReceipt ? "Pengaturan struk" : "Printer Bluetooth"}</h1><p>{isReceipt ? "Atur informasi yang tampil pada setiap struk." : "Kelola koneksi dan preferensi printer di perangkat ini."}</p></div></header>}
+    </div></div> : <header className="page-heading settings-subpage-heading"><div><Link className="settings-back-link" to="/pengaturan">‹ Pengaturan</Link>{!isReceipt && <><span className="section-kicker">PERANGKAT INI</span><h1>Printer Bluetooth</h1><p>Kelola koneksi dan preferensi printer di perangkat ini.</p></>}</div></header>}
     {isReceipt && <>
+    <section className="receipt-review-section" aria-label="Pratinjau struk">
+      <div className="receipt-review-heading"><div><span className="section-kicker">PRATINJAU</span><h2>Hasil cetak struk</h2></div></div>
+      {receiptDraft && <div className="receipt-preview-paper receipt-paper-thermal receipt-review-paper">
+        <header className="receipt-header">
+          {receiptDraft.showLogo && (logoPreview || session.store.logoUrl) && <img className="receipt-store-logo" src={logoPreview || session.store.logoUrl || ""} alt="" />}
+          {receiptDraft.showStoreName && <h3>{session.store.name}</h3>}
+          {receiptDraft.showOutletName && <p>{activeOutlet?.name}</p>}
+          {receiptDraft.showAddress && activeOutlet?.address && <p>{activeOutlet.address}</p>}
+          {receiptDraft.showWhatsapp && activeOutlet?.whatsappNumber && <p>WhatsApp: {activeOutlet.whatsappNumber}</p>}
+        </header>
+        <div className="receipt-divider" />
+        <section className="receipt-information">
+          <div><span>No. Transaksi</span><strong>CONTOH-0001</strong></div>
+          <div><span>Tanggal</span><strong>27/11/2026 15:15</strong></div>
+          {receiptDraft.showCashier && <div><span>Kasir</span><strong>Nama kasir</strong></div>}
+          {receiptDraft.showCustomer && <div><span>Pelanggan</span><strong>Pelanggan toko</strong></div>}
+          <div><span>Tipe pesanan</span><strong>Makan di tempat</strong></div>
+        </section>
+        <div className="receipt-divider" />
+        <section className="receipt-products"><strong className="receipt-section-label">DETAIL PESANAN</strong><div className="receipt-product"><div className="receipt-product-heading"><strong>Contoh produk</strong><strong>Rp25.000</strong></div><span>1 × Rp25.000</span></div></section>
+        <div className="receipt-divider" />
+        <section className="receipt-payment"><div><span>Subtotal</span><strong>Rp25.000</strong></div><div className="receipt-grand-total"><span>TOTAL</span><strong>Rp25.000</strong></div><div><span>Metode pembayaran</span><strong>Tunai</strong></div><div><span>Tunai diterima</span><strong>Rp30.000</strong></div><div><span>Kembalian</span><strong>Rp5.000</strong></div></section>
+        <div className="receipt-divider" />
+        <footer className="receipt-footer">{receiptDraft.footerMessage && <p>{receiptDraft.footerMessage}</p>}{receiptDraft.showHeyPostWatermark && <small>Powered by HeyPost</small>}</footer>
+      </div>}
+      <button className="button primary receipt-test-button" type="button" onClick={testReceipt}><Printer size={17} /> Test Struk</button>
+    </section>
     <section className="receipt-settings-section" id="receipt">
-      <div className="settings-detail-heading"><div><span className="section-kicker">IDENTITAS TOKO</span><h2>Pengaturan struk</h2><p>Preferensi ini berlaku untuk semua perangkat di toko.</p></div></div>
       {isLoading ? <p className="settings-muted">Memuat pengaturan struk…</p> : error ? <p className="settings-error" role="alert">{error.message}</p> : receiptDraft && <>
         <div className="receipt-logo-editor">
           <div className="receipt-logo-preview">{logoPreview || session.store.logoUrl ? <img src={logoPreview || session.store.logoUrl || ""} alt="Logo toko" /> : <ImagePlus size={26} />}</div>
@@ -137,44 +176,6 @@ export default function SettingsPage() {
         </div>
         <div className="receipt-toggle-list">{toggleFields.map(({ key, label }) => <label className="receipt-toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={receiptDraft[key]} onChange={(event) => setDraft((current) => ({ ...(current ?? receiptDraft), [key]: event.target.checked }))} /></label>)}</div>
         <label className="receipt-footer-field">Pesan footer struk<textarea rows={3} maxLength={300} value={receiptDraft.footerMessage} onChange={(event) => setDraft((current) => ({ ...(current ?? receiptDraft), footerMessage: event.target.value }))} placeholder="Contoh: Terima kasih telah berbelanja." /><small>Maksimal 300 karakter.</small></label>
-        <div className="receipt-preview"><span className="section-kicker">PRATINJAU STRUK</span><div className="receipt-preview-paper receipt-paper-thermal">
-          <header className="receipt-header">
-            {receiptDraft.showLogo && (logoPreview || session.store.logoUrl) && <img src={logoPreview || session.store.logoUrl || ""} alt="" />}
-            {receiptDraft.showStoreName && <h3>{session.store.name}</h3>}
-            {receiptDraft.showOutletName && <p>{activeOutlet?.name}</p>}
-            {receiptDraft.showAddress && activeOutlet?.address && <p>{activeOutlet.address}</p>}
-            {receiptDraft.showWhatsapp && activeOutlet?.whatsappNumber && <p>WhatsApp: {activeOutlet.whatsappNumber}</p>}
-          </header>
-          <div className="receipt-divider" />
-          <section className="receipt-information">
-            <div><span>No. Transaksi</span><strong>INV-20261127-0001</strong></div>
-            <div><span>Tanggal</span><strong>27/11/2026 15:15</strong></div>
-            {receiptDraft.showCashier && <div><span>Kasir</span><strong>Nama kasir</strong></div>}
-            {receiptDraft.showCustomer && <div><span>Pelanggan</span><strong>Pelanggan toko</strong></div>}
-            <div><span>Tipe pesanan</span><strong>Makan di tempat</strong></div>
-          </section>
-          <div className="receipt-divider" />
-          <section className="receipt-products">
-            <strong className="receipt-section-label">DETAIL PESANAN</strong>
-            <div className="receipt-product">
-              <div className="receipt-product-heading"><strong>Contoh produk</strong><strong>Rp25.000</strong></div>
-              <span>1 × Rp25.000</span>
-            </div>
-          </section>
-          <div className="receipt-divider" />
-          <section className="receipt-payment">
-            <div><span>Subtotal</span><strong>Rp25.000</strong></div>
-            <div className="receipt-grand-total"><span>TOTAL</span><strong>Rp25.000</strong></div>
-            <div><span>Metode pembayaran</span><strong>Tunai</strong></div>
-            <div><span>Tunai diterima</span><strong>Rp30.000</strong></div>
-            <div><span>Kembalian</span><strong>Rp5.000</strong></div>
-          </section>
-          <div className="receipt-divider" />
-          <footer className="receipt-footer">
-            {receiptDraft.footerMessage && <p>{receiptDraft.footerMessage}</p>}
-            {receiptDraft.showHeyPostWatermark && <small>Powered by HeyPost</small>}
-          </footer>
-        </div></div>
         <div className="settings-detail-actions"><button className="button primary" type="button" onClick={() => saveReceipt.mutate({ ...receiptDraft, footerMessage: receiptDraft.footerMessage.trim() || null })} disabled={saveReceipt.isPending}>{saveReceipt.isPending ? "Menyimpan…" : "Simpan pengaturan struk"}</button></div>
       </>}
     </section>
