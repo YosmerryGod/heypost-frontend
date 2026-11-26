@@ -30,6 +30,9 @@ export default function App() {
         <Route path="/outlet" element={<RoleGate allow={["owner"]}><OutletsPage /></RoleGate>} />
         {/* [MODIFIED] Outlet dan karyawan dikelola melalui halaman Pengaturan. */}
         <Route path="/pengaturan" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} />
+        {/* [ADDED] Halaman khusus pengaturan struk dan printer. */}
+        <Route path="/pengaturan/struk" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} />
+        <Route path="/pengaturan/printer" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></Suspense>
