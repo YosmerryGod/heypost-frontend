@@ -908,3 +908,23 @@ body { color: var(--ink-900); }
   .product-active-toggle { width: 32px; height: 21px; }
   .product-active-toggle span { width: 15px; height: 15px; }
 }
+
+/* [ADDED] Centralized settings menu. */
+.settings-hub { max-width: 860px; }
+.settings-hub-group { margin-top: 26px; }
+.settings-hub-group > h2 { margin: 0 0 10px; color: var(--ink-600); font-size: 11px; font-weight: 800; letter-spacing: .09em; }
+.settings-hub-list { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-000); }
+.settings-hub-row { width: 100%; min-height: 76px; display: flex; align-items: center; gap: 13px; padding: 13px 15px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; text-decoration: none; }
+.settings-hub-row:last-child { border-bottom: 0; }
+.settings-hub-row:not(.is-disabled):hover { background: var(--surface-050); }
+.settings-hub-icon { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; background: #eaf6ef; color: #08764d; }
+.settings-hub-copy { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 3px; }
+.settings-hub-copy strong { color: var(--ink-900); font-size: 14px; font-weight: 720; }
+.settings-hub-copy small { color: var(--ink-600); font-size: 12px; }
+.settings-hub-arrow { color: var(--ink-400); font-size: 25px; line-height: 1; }
+.settings-hub-soon { flex: 0 0 auto; color: var(--ink-500); font-size: 11px; font-weight: 650; }
+.settings-hub-row.is-disabled { cursor: default; opacity: .68; }
+@media (max-width: 640px) {
+  .settings-hub-group { margin-top: 22px; }
+  .settings-hub-row { min-height: 70px; padding: 11px 12px; }
+}
