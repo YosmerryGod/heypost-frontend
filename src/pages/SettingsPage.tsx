@@ -118,7 +118,8 @@ export default function SettingsPage() {
   ];
 
   return <div className="page-container settings-page settings-hub settings-detail-page">
-    {isHub && <header className="page-heading"><div><span className="section-kicker">PREFERENSI TOKO</span><h1>Pengaturan</h1><p>Kelola {session.store.name} dan perangkat kasir.</p></div>    {isHub ? <div className="settings-hub-group"><h2>MENU PENGATURAN</h2><div className="settings-hub-list">
+    {isHub && <header className="page-heading"><div><span className="section-kicker">PREFERENSI TOKO</span><h1>Pengaturan</h1><p>Kelola {session.store.name} dan perangkat kasir.</p></div></header>}
+    {isHub ? <div className="settings-hub-group"><h2>MENU PENGATURAN</h2><div className="settings-hub-list">
       {settingsGroups.flatMap((group) => group.items).map(({ label, description, icon: Icon, to }) => {
         const content = <><span className="settings-hub-icon"><Icon size={20} /></span><span className="settings-hub-copy"><strong>{label}</strong><small>{description}</small></span>{to ? <span className="settings-hub-arrow" aria-hidden="true">›</span> : <span className="settings-hub-soon">Segera</span>}</>;
         return to ? <Link className="settings-hub-row" key={label} to={to}>{content}</Link> : <div className="settings-hub-row is-disabled" key={label} aria-disabled="true">{content}</div>;
@@ -162,6 +163,6 @@ export default function SettingsPage() {
       <p className="settings-muted"><RefreshCw size={14} /> Pengaturan printer tidak ikut berpindah saat akun login di HP lain. Pemilihan perangkat belum menjamin kompatibilitas protokol cetak; printer perlu mendukung metode cetak yang digunakan browser.</p>
       <div className="settings-muted"><Check size={15} /> Preferensi perangkat tersimpan otomatis.</div>
     </section>
-    </>} </section>
+    </>}
   </div>;
 }
