@@ -2,6 +2,8 @@ import { Building2, CreditCard, Printer, ReceiptText, Settings, UsersRound } fro
 import { Link } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
 
+// [ADDED] Pusat navigasi pengaturan toko dan perangkat.
+
 type SettingsItem = {
   label: string;
   description: string;
