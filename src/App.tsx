@@ -27,7 +27,8 @@ export default function App() {
         <Route path="/laporan" element={<PermissionGate allow={["reports.sales.view"]}><ReportsPage /></PermissionGate>} />
         <Route path="/karyawan" element={<RoleGate allow={["owner"]}><EmployeesPage /></RoleGate>} />
         <Route path="/outlet" element={<RoleGate allow={["owner"]}><OutletsPage /></RoleGate>} />
-        <Route path="/pengaturan" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} /> // [MODIFIED]
+        {/* [MODIFIED] Outlet dan karyawan dikelola melalui halaman Pengaturan. */}
+        <Route path="/pengaturan" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></Suspense>
