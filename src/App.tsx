@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import SettingsPage from "@/pages/SettingsPage";
 import { Navigate, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 import AppLayout from "@/components/AppLayout";
@@ -26,7 +27,7 @@ export default function App() {
         <Route path="/laporan" element={<PermissionGate allow={["reports.sales.view"]}><ReportsPage /></PermissionGate>} />
         <Route path="/karyawan" element={<RoleGate allow={["owner"]}><EmployeesPage /></RoleGate>} />
         <Route path="/outlet" element={<RoleGate allow={["owner"]}><OutletsPage /></RoleGate>} />
-        <Route path="/pengaturan" element={<Navigate to="/outlet" replace />} />
+        <Route path="/pengaturan" element={<RoleGate allow={["owner"]}><SettingsPage /></RoleGate>} /> // [MODIFIED]
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes></Suspense>
