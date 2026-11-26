@@ -135,16 +135,43 @@ export default function SettingsPage() {
         </div>
         <div className="receipt-toggle-list">{toggleFields.map(({ key, label }) => <label className="receipt-toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={draft[key]} onChange={(event) => setDraft((current) => current ? { ...current, [key]: event.target.checked } : current)} /></label>)}</div>
         <label className="receipt-footer-field">Pesan footer struk<textarea rows={3} maxLength={300} value={draft.footerMessage} onChange={(event) => setDraft((current) => current ? { ...current, footerMessage: event.target.value } : current)} placeholder="Contoh: Terima kasih telah berbelanja." /><small>Maksimal 300 karakter.</small></label>
-        <div className="receipt-preview"><span className="section-kicker">PRATINJAU STRUK</span><div className="receipt-preview-paper">
-          {draft.showLogo && (logoPreview || session.store.logoUrl) && <img src={logoPreview || session.store.logoUrl || ""} alt="" />}
-          {draft.showStoreName && <strong>{session.store.name}</strong>}
-          {draft.showOutletName && <span>{activeOutlet?.name}</span>}
-          {draft.showAddress && activeOutlet?.address && <span>{activeOutlet.address}</span>}
-          {draft.showWhatsapp && activeOutlet?.whatsappNumber && <span>WhatsApp: {activeOutlet.whatsappNumber}</span>}
-          <hr /><span>INV-20261127-0001</span><span>1 × Contoh produk</span><strong>Rp25.000</strong>
-          {draft.showCashier && <span>Kasir: Nama kasir</span>}{draft.showCustomer && <span>Pelanggan: Umum</span>}
-          {draft.showHeyPostWatermark && <small>Powered by HeyPost</small>}
-          {draft.footerMessage && <p>{draft.footerMessage}</p>}
+        <div className="receipt-preview"><span className="section-kicker">PRATINJAU STRUK</span><div className="receipt-preview-paper receipt-paper-thermal">
+          <header className="receipt-header">
+            {draft.showLogo && (logoPreview || session.store.logoUrl) && <img src={logoPreview || session.store.logoUrl || ""} alt="" />}
+            {draft.showStoreName && <h3>{session.store.name}</h3>}
+            {draft.showOutletName && <p>{activeOutlet?.name}</p>}
+            {draft.showAddress && activeOutlet?.address && <p>{activeOutlet.address}</p>}
+            {draft.showWhatsapp && activeOutlet?.whatsappNumber && <p>WhatsApp: {activeOutlet.whatsappNumber}</p>}
+          </header>
+          <div className="receipt-divider" />
+          <section className="receipt-information">
+            <div><span>No. Transaksi</span><strong>INV-20261127-0001</strong></div>
+            <div><span>Tanggal</span><strong>27/11/2026 15:15</strong></div>
+            {draft.showCashier && <div><span>Kasir</span><strong>Nama kasir</strong></div>}
+            {draft.showCustomer && <div><span>Pelanggan</span><strong>Pelanggan toko</strong></div>}
+            <div><span>Tipe pesanan</span><strong>Makan di tempat</strong></div>
+          </section>
+          <div className="receipt-divider" />
+          <section className="receipt-products">
+            <strong className="receipt-section-label">DETAIL PESANAN</strong>
+            <div className="receipt-product">
+              <div className="receipt-product-heading"><strong>Contoh produk</strong><strong>Rp25.000</strong></div>
+              <span>1 × Rp25.000</span>
+            </div>
+          </section>
+          <div className="receipt-divider" />
+          <section className="receipt-payment">
+            <div><span>Subtotal</span><strong>Rp25.000</strong></div>
+            <div className="receipt-grand-total"><span>TOTAL</span><strong>Rp25.000</strong></div>
+            <div><span>Metode pembayaran</span><strong>Tunai</strong></div>
+            <div><span>Tunai diterima</span><strong>Rp30.000</strong></div>
+            <div><span>Kembalian</span><strong>Rp5.000</strong></div>
+          </section>
+          <div className="receipt-divider" />
+          <footer className="receipt-footer">
+            {draft.footerMessage && <p>{draft.footerMessage}</p>}
+            {draft.showHeyPostWatermark && <small>Powered by HeyPost</small>}
+          </footer>
         </div></div>
         <div className="settings-detail-actions"><button className="button primary" type="button" onClick={() => saveReceipt.mutate({ ...draft, footerMessage: draft.footerMessage.trim() || null })} disabled={saveReceipt.isPending}>{saveReceipt.isPending ? "Menyimpan…" : "Simpan pengaturan struk"}</button></div>
       </>}
