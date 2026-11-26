@@ -66,5 +66,5 @@
   body.receipt-test-print * { visibility: hidden !important; }
   body.receipt-test-print .receipt-review-paper,
   body.receipt-test-print .receipt-review-paper * { visibility: visible !important; }
-  body.receipt-test-print .receipt-review-paper { position: absolute; top: 0; left: 0; width: 58mm; max-width: 58mm; margin: 0; padding: 0; border: 0; box-shadow: none; }
+  body.receipt-test-print .receipt-review-paper { position: absolute; top: 0; left: 0; max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; }
 }
