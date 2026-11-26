@@ -38,25 +38,26 @@ export default function SettingsPage() {
   const utils = trpc.useUtils();
   const { data: receipt, isLoading, error } = trpc.store.getReceiptSettings.useQuery(undefined, { enabled: !!session });
   const [draft, setDraft] = useState<ReceiptDraft | null>(null);
-  const [printer, setPrinter] = useState<PrinterPrefs>(defaultPrinter);
+  const [printer, setPrinter] = useState<PrinterPrefs>(() => {
+    try {
+      if (typeof window === "undefined") return defaultPrinter;
+      const saved = window.localStorage.getItem(printerStorageKey);
+      return saved ? { ...defaultPrinter, ...JSON.parse(saved) as Partial<PrinterPrefs> } : defaultPrinter;
+    } catch {
+      if (typeof window !== "undefined") window.localStorage.removeItem(printerStorageKey);
+      return defaultPrinter;
+    }
+  });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoBusy, setLogoBusy] = useState(false);
   const [printerBusy, setPrinterBusy] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(printerStorageKey);
-      if (saved) setPrinter({ ...defaultPrinter, ...JSON.parse(saved) as Partial<PrinterPrefs> });
-    } catch { localStorage.removeItem(printerStorageKey); }
-  }, []);
-  useEffect(() => {
-    if (receipt) setDraft({
-      showLogo: receipt.showLogo, showStoreName: receipt.showStoreName, showOutletName: receipt.showOutletName,
-      showAddress: receipt.showAddress, showWhatsapp: receipt.showWhatsapp, showCashier: receipt.showCashier,
-      showCustomer: receipt.showCustomer, showHeyPostWatermark: receipt.showHeyPostWatermark,
-      footerMessage: receipt.footerMessage ?? "",
-    });
-  }, [receipt]);
+  // [MODIFIED] Derive initial receipt form values from the query instead of syncing state in an effect.
+  const receiptDraft: ReceiptDraft | null = draft ?? (receipt ? {
+    showLogo: receipt.showLogo, showStoreName: receipt.showStoreName, showOutletName: receipt.showOutletName,
+    showAddress: receipt.showAddress, showWhatsapp: receipt.showWhatsapp, showCashier: receipt.showCashier,
+    showCustomer: receipt.showCustomer, showHeyPostWatermark: receipt.showHeyPostWatermark,
+    footerMessage: receipt.footerMessage ?? "",
+  } : null);
 
   const saveReceipt = trpc.store.updateReceiptSettings.useMutation({
     onSuccess: async () => { await utils.store.getReceiptSettings.invalidate(); toast.success("Pengaturan struk disimpan"); },
@@ -77,7 +78,7 @@ export default function SettingsPage() {
   const setPrinterValue = <K extends keyof PrinterPrefs>(key: K, value: PrinterPrefs[K]) => {
     setPrinter((current) => {
       const next = { ...current, [key]: value };
-      localStorage.setItem(printerStorageKey, JSON.stringify(next));
+      window.localStorage.setItem(printerStorageKey, JSON.stringify(next));
       return next;
     });
   };
@@ -128,13 +129,13 @@ export default function SettingsPage() {
     {isReceipt && <>
     <section className="receipt-settings-section" id="receipt">
       <div className="settings-detail-heading"><div><span className="section-kicker">IDENTITAS TOKO</span><h2>Pengaturan struk</h2><p>Preferensi ini berlaku untuk semua perangkat di toko.</p></div></div>
-      {isLoading ? <p className="settings-muted">Memuat pengaturan struk…</p> : error ? <p className="settings-error" role="alert">{error.message}</p> : draft && <>
+      {isLoading ? <p className="settings-muted">Memuat pengaturan struk…</p> : error ? <p className="settings-error" role="alert">{error.message}</p> : receiptDraft && <>
         <div className="receipt-logo-editor">
           <div className="receipt-logo-preview">{logoPreview || session.store.logoUrl ? <img src={logoPreview || session.store.logoUrl || ""} alt="Logo toko" /> : <ImagePlus size={26} />}</div>
           <div><strong>Logo toko</strong><p>JPG, PNG, atau WebP. Maksimal 5 MB.</p><label className="button secondary receipt-upload-button">{logoBusy ? "Mengunggah…" : "Pilih logo"}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseLogo} disabled={logoBusy} /></label></div>
         </div>
-        <div className="receipt-toggle-list">{toggleFields.map(({ key, label }) => <label className="receipt-toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={draft[key]} onChange={(event) => setDraft((current) => current ? { ...current, [key]: event.target.checked } : current)} /></label>)}</div>
-        <label className="receipt-footer-field">Pesan footer struk<textarea rows={3} maxLength={300} value={draft.footerMessage} onChange={(event) => setDraft((current) => current ? { ...current, footerMessage: event.target.value } : current)} placeholder="Contoh: Terima kasih telah berbelanja." /><small>Maksimal 300 karakter.</small></label>
+        <div className="receipt-toggle-list">{toggleFields.map(({ key, label }) => <label className="receipt-toggle-row" key={key}><span>{label}</span><input type="checkbox" checked={receiptDraft[key]} onChange={(event) => setDraft((current) => ({ ...(current ?? receiptDraft), [key]: event.target.checked }))} /></label>)}</div>
+        <label className="receipt-footer-field">Pesan footer struk<textarea rows={3} maxLength={300} value={receiptDraft.footerMessage} onChange={(event) => setDraft((current) => ({ ...(current ?? receiptDraft), footerMessage: event.target.value }))} placeholder="Contoh: Terima kasih telah berbelanja." /><small>Maksimal 300 karakter.</small></label>
         <div className="receipt-preview"><span className="section-kicker">PRATINJAU STRUK</span><div className="receipt-preview-paper receipt-paper-thermal">
           <header className="receipt-header">
             {draft.showLogo && (logoPreview || session.store.logoUrl) && <img src={logoPreview || session.store.logoUrl || ""} alt="" />}
