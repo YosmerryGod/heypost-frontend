@@ -138,18 +138,18 @@ export default function SettingsPage() {
         <label className="receipt-footer-field">Pesan footer struk<textarea rows={3} maxLength={300} value={receiptDraft.footerMessage} onChange={(event) => setDraft((current) => ({ ...(current ?? receiptDraft), footerMessage: event.target.value }))} placeholder="Contoh: Terima kasih telah berbelanja." /><small>Maksimal 300 karakter.</small></label>
         <div className="receipt-preview"><span className="section-kicker">PRATINJAU STRUK</span><div className="receipt-preview-paper receipt-paper-thermal">
           <header className="receipt-header">
-            {draft.showLogo && (logoPreview || session.store.logoUrl) && <img src={logoPreview || session.store.logoUrl || ""} alt="" />}
-            {draft.showStoreName && <h3>{session.store.name}</h3>}
-            {draft.showOutletName && <p>{activeOutlet?.name}</p>}
-            {draft.showAddress && activeOutlet?.address && <p>{activeOutlet.address}</p>}
-            {draft.showWhatsapp && activeOutlet?.whatsappNumber && <p>WhatsApp: {activeOutlet.whatsappNumber}</p>}
+            {receiptDraft.showLogo && (logoPreview || session.store.logoUrl) && <img src={logoPreview || session.store.logoUrl || ""} alt="" />}
+            {receiptDraft.showStoreName && <h3>{session.store.name}</h3>}
+            {receiptDraft.showOutletName && <p>{activeOutlet?.name}</p>}
+            {receiptDraft.showAddress && activeOutlet?.address && <p>{activeOutlet.address}</p>}
+            {receiptDraft.showWhatsapp && activeOutlet?.whatsappNumber && <p>WhatsApp: {activeOutlet.whatsappNumber}</p>}
           </header>
           <div className="receipt-divider" />
           <section className="receipt-information">
             <div><span>No. Transaksi</span><strong>INV-20261127-0001</strong></div>
             <div><span>Tanggal</span><strong>27/11/2026 15:15</strong></div>
-            {draft.showCashier && <div><span>Kasir</span><strong>Nama kasir</strong></div>}
-            {draft.showCustomer && <div><span>Pelanggan</span><strong>Pelanggan toko</strong></div>}
+            {receiptDraft.showCashier && <div><span>Kasir</span><strong>Nama kasir</strong></div>}
+            {receiptDraft.showCustomer && <div><span>Pelanggan</span><strong>Pelanggan toko</strong></div>}
             <div><span>Tipe pesanan</span><strong>Makan di tempat</strong></div>
           </section>
           <div className="receipt-divider" />
@@ -170,11 +170,11 @@ export default function SettingsPage() {
           </section>
           <div className="receipt-divider" />
           <footer className="receipt-footer">
-            {draft.footerMessage && <p>{draft.footerMessage}</p>}
-            {draft.showHeyPostWatermark && <small>Powered by HeyPost</small>}
+            {receiptDraft.footerMessage && <p>{receiptDraft.footerMessage}</p>}
+            {receiptDraft.showHeyPostWatermark && <small>Powered by HeyPost</small>}
           </footer>
         </div></div>
-        <div className="settings-detail-actions"><button className="button primary" type="button" onClick={() => saveReceipt.mutate({ ...draft, footerMessage: draft.footerMessage.trim() || null })} disabled={saveReceipt.isPending}>{saveReceipt.isPending ? "Menyimpan…" : "Simpan pengaturan struk"}</button></div>
+        <div className="settings-detail-actions"><button className="button primary" type="button" onClick={() => saveReceipt.mutate({ ...receiptDraft, footerMessage: receiptDraft.footerMessage.trim() || null })} disabled={saveReceipt.isPending}>{saveReceipt.isPending ? "Menyimpan…" : "Simpan pengaturan struk"}</button></div>
       </>}
     </section>
     </>}
